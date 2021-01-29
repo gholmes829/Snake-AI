@@ -4,6 +4,9 @@ Uses multi-core parallel processing to train neural networks through natural sel
 Classes
 -------
 Genetics
+
+References: The psuedo-code of Genetics.evolve and Genetics.evaluate is very loosely based on that 
+      of https://github.com/valentinmace/snake/blob/master/genetic_algorithm.py.
 """
 
 from copy import deepcopy
