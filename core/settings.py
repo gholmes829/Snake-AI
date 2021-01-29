@@ -27,8 +27,9 @@ refeed = 175
 snakeParams = {"initialSize": initialSnakeSize, "vision": snakeVision, "maxHunger": maxHunger, "refeed": refeed}
 networkArchitecture = (24, 16, 3)  # FFNN layers
 
-populationSize = 250
-generations = 100
+populationSize = 100
+generations = 5
+displayTraining = True  # displays best snake after each generation during training
 
 cores = psutil.cpu_count(logical=False)  # number of CPU cores, not including logical processors
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"  # hide Pygame greeting message
@@ -38,10 +39,11 @@ def getInfo() -> str:
     """
     Provides basic info about settings in str format.
     """
-    return "\n    Map size: " + str(mapSize) + \
+    return "    Map size: " + str(mapSize) + \
            "\n    Population: " + str(populationSize) + \
-           "\n    Starting size: " + str(initialSnakeSize) + \
-           "\n    Vision: " + str(snakeVision) + \
+           "\n    Target generations: " + str(generations) + \
+           "\n    Starting snake size: " + str(initialSnakeSize) + \
+           "\n    Snake vision: " + str(snakeVision) + \
            "\n    Max hunger: " + str(maxHunger) + \
-           "\n    Refeed: " + str(refeed) + \
-           "\n    Cores: " + str(cores)
+           "\n    Refeed bonus: " + str(refeed) + \
+           "\n    Available CPU cores: " + str(cores)

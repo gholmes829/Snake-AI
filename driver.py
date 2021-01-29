@@ -45,7 +45,11 @@ class Driver:
         self.replayPath = os.path.join(os.getcwd(), "replays")
         self.dnaPath = os.path.join(os.getcwd(), "dna")
         self.modelPath = os.path.join(os.getcwd(), "trained")
-        print("Initialized!\n")
+        print("    +" + "="*8 + "+")
+        print("    |SNAKE AI|")
+        print("    +" + "="*8 + "+")
+        print("\nInitialized with the following settings:")
+        print(settings.getInfo(), "\n")
 
     def run(self) -> None:
         """Allows user to select mode, runs mode."""
@@ -162,7 +166,9 @@ class Driver:
             snakeDNA.printGenStats(gen)
             print("\tTime elapsed:", elapsed, "secs")
             bestSnake = snakeDNA.generations[gen]["best"]["object"]
-            #game.playTrainingGame(bestSnake, render=True)  # best snake of gen plays game in GUI window
+            
+            if settings.displayTraining:
+                game.playTrainingGame(bestSnake, render=True)  # best snake of gen plays game in GUI window
 
             # save data of generation to .../dna/evolution_x/generation_y/analytics.json
             generationPath = os.path.join(evolutionPath, "generation_" + str(gen))
