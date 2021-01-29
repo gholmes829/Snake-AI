@@ -81,7 +81,7 @@ class Genetics:
                  mergeTraits: callable = None,
                  crossoverRate: float = 0.7,
                  mutationRate: float = 0.3,
-                 trials: int = 4
+                 trials: int = 3
                  ) -> None:
         """
         Initializes.
@@ -129,10 +129,10 @@ class Genetics:
         self.generations[self.gen] = {}
 
         parents = self._selectParents(self.population)
-        children = self._makeChildren(parents)
-        mutants = self._makeMutants(self.population)
-        superMutants = [self._mutate(self.population[:5][i]) for i in range(5) for _ in range(2)]
-        population = self.population + children + mutants + superMutants
+        population = self.population + \
+                    self._makeChildren(parents) + \
+                    self._makeMutants(self.population) + \
+                    self._makeSuperMutants(self.population)
 
         self.generations[self.gen]["population"] = self._evaluate(population)
         self.generations[self.gen]["population"].sort(key=lambda member: member["fitness"], reverse=True)
@@ -222,10 +222,7 @@ class Genetics:
         -------
         list: list of selected parents
         """
-        parents = []
-        for i in range(self.crossovers):
-            parents.append(self._selectParent(population))
-        return parents
+        return [self._selectParent(population) for _ in range(self.crossovers)]
 
     def _selectParent(self, population: list) -> object:
         """
@@ -279,10 +276,7 @@ class Genetics:
         -------
         list: list of created children
         """
-        children = []
-        for i in range(self.crossovers):
-            children.append(self._makeChild(population))
-        return children
+        return [self._makeChild(population) for _ in range(self.crossovers)]
 
     def _makeChild(self, population: list) -> object:
         """
@@ -348,10 +342,22 @@ class Genetics:
         -------
         list: list of created mutants
         """
-        mutants = []
-        for i in range(self.mutations):
-            mutants.append(self._mutate(population[randint(0, self.size - 1)]))
-        return mutants
+        return [self._mutate(population[randint(0, self.size - 1)]) for _ in range(self.mutations)]
+        
+    def _makeSuperMutants(self, population):
+        """
+        Make super mutants (mutants based off top performing members) from given population.
+
+        Parameters
+        ----------
+        population: list
+            Population to make mutants from
+
+        Returns
+        -------
+        list: list of created super mutants
+        """
+        return [self._mutate(self.population[:5][i]) for i in range(5) for _ in range(2)]
 
     def _mutate(self, member: object) -> object:
         """
@@ -397,9 +403,9 @@ class Genetics:
         -------
         list: population after undergoing epigenetic mutations
         """
-        for i in range(int(0.1 * self.size)):
-            memberIndex = randint(10, self.size - 1)
-            member = population[memberIndex]
-            population[memberIndex] = self._mutate(member)
+        for _ in range(int(0.1 * self.size)):
+            index = randint(10, self.size - 1)
+            member = population[index]
+            population[index] = self._mutate(member)
 
         return population
