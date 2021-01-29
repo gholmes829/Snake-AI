@@ -33,7 +33,7 @@ generations = 25
 displayTraining = False  # displays best snake after each generation during training
 
 cores = psutil.cpu_count(logical=False)  # number of CPU cores, not including logical processors
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"  # hide Pygame greeting message
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"  # hide Pygame greeting message
 
 
 def getInfo() -> str:
