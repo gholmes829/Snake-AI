@@ -32,6 +32,41 @@ class Behavior:
     def __call__(self, vision, direction) -> tuple:
         """Does nothing, expandable"""
         pass
+    
+    @staticmethod
+    def smartShield(decision: int, newDirection: int, move: str, vision: np.ndarray, direction):
+        """
+        Tries to prevent snake from going in dangerous direction.
+        
+        Parameters
+        ----------
+        decision: int
+            Local direction
+        newDirection: int
+            Global direction
+        move: string
+            Move necessary to have Snake oriented to this direction
+        vision: np.array
+            Describes closeness of Snake's head to food, body, and wall
+        direction: tuple
+            Current global direction Snake is facing
+
+        Returns
+        -------
+        tuple: (new global direction, move necessary to have Snake oriented to this direction)
+        """
+        possibleMoves = {0, 1, 2}
+        possibleMoves.remove(decision)
+
+        while possibleMoves and \
+            ((decision == 0 and (vision[11] == 1 or vision[19] == 1)) or \
+            (decision == 1 and (vision[8] == 1 or vision[16] == 1)) or \
+            (decision == 2 and (vision[9] == 1 or vision[17] == 1))):
+            decision = possibleMoves.pop()
+            newDirection = {0: Behavior.rotateCCW(direction), 1: direction, 2: Behavior.rotateCW(direction)}[decision]
+            move = {0: "left", 1: "straight", 2: "right"}[decision]
+
+        return newDirection, move
 
     @staticmethod
     def getMove(basis: tuple, direction: tuple) -> str:
@@ -131,7 +166,7 @@ class AI(neural_nets.FFNN, Behavior):
     confidence: list
         Log of 'confidence' of decisions
     """
-    def __init__(self, layers=(24, 16, 3), **kwargs) -> None:
+    def __init__(self, layers=(24, 16, 3), smartShield: bool = False, **kwargs) -> None:
         """
         Initializes base class, instantiates FFNN with layer sizes.
 
@@ -139,12 +174,15 @@ class AI(neural_nets.FFNN, Behavior):
         ----------
         layers: tuple, default=(24, 16, 3)
             Neural network layer architecture
-
+        smartShield: bool, default=False
+            Determines whether dangerous moves can be overwritten
+            
         **kwargs
             Neural network super class parameters
         """
         Behavior.__init__(self)
         neural_nets.FFNN.__init__(self, layers, **kwargs)
+        self.smartShield = smartShield
         self.confidence = []
 
     def __call__(self, vision: np.ndarray, direction: tuple) -> tuple:
@@ -167,7 +205,11 @@ class AI(neural_nets.FFNN, Behavior):
         self.confidence.append(confidence)
         decision = np.argmax(out)
         newDirection = {0: Behavior.rotateCCW(direction), 1: direction, 2: Behavior.rotateCW(direction)}[decision]
-        move = {0: "left", 1: "straight", 2: "right"}[decision]
+        move = {0: "left", 1: "straight", 2: "right"}[decision] 
+          
+        if self.smartShield:
+            newDirection, move = Behavior.smartShield(decision, newDirection, move, vision, direction)
+          
         return newDirection, move
 
 

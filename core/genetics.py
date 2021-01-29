@@ -131,7 +131,8 @@ class Genetics:
         parents = self._selectParents(self.population)
         children = self._makeChildren(parents)
         mutants = self._makeMutants(self.population)
-        population = self.population + children + mutants
+        superMutants = [self._mutate(self.population[:5][i]) for i in range(5) for _ in range(2)]
+        population = self.population + children + mutants + superMutants
 
         self.generations[self.gen]["population"] = self._evaluate(population)
         self.generations[self.gen]["population"].sort(key=lambda member: member["fitness"], reverse=True)

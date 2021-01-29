@@ -101,7 +101,8 @@ class Driver:
             dataParams = {
                 "model": model,
                 "layers": settings.networkArchitecture,
-                "color": tuple(data["color"])
+                "color": tuple(data["color"]),
+                "smartShield": settings.smartShield
             }
 
             snake = snakes.SmartSnake(**settings.snakeParams, **dataParams)
@@ -134,6 +135,11 @@ class Driver:
 
     def _trainAI(self) -> None:
         """Trains AI snakes. Saves data and models in ../dna folder. Creates new folder for each training session."""
+        # setting validation
+        if settings.populationSize < 5:
+            print("\nError: Population size must be at least 5. Change size in settings.py.")
+            return
+            
         # initialize paths and files
         dnaFiles = os.listdir(self.dnaPath)
         if len(dnaFiles) > 0:
@@ -151,7 +157,7 @@ class Driver:
 
         # initialize training parameters
         population, generations = settings.populationSize, settings.generations
-        initialPopulation = [snakes.SmartSnake(layers=settings.networkArchitecture) for _ in range(population)]
+        initialPopulation = [snakes.SmartSnake(layers=settings.networkArchitecture, **settings.snakeParams) for _ in range(population)]
         fitness = snakes.Snake.fitness
         task = game.playTrainingGame
         colorCross = snakes.Snake.mergeTraits

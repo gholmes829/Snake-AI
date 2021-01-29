@@ -211,11 +211,11 @@ class Environment:
                 data[j + i] = rays[Environment.changeReference(snakeDirection, direction)][item]  # add data
 
         # PRINT VALUES OF DATA TO DEBUG
-        # for i in range(3):
+        #for i in range(3):
         #    for j in range(8):
         #        print(round(data[i * 8 + j], 3), end=" ")
         #    print()
-        # self.display()
+        #self.display()
         return np.array(data)
 
     def _placeSnake(self) -> None:

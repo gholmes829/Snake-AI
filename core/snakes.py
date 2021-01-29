@@ -227,7 +227,7 @@ class Snake:
 
 class SmartSnake(Snake):
     """Snake predetermined with neural net as behavior."""
-    def __init__(self, model: dict = None, layers: tuple = (24, 16, 3), **kwargs) -> None:
+    def __init__(self, model: dict = None, layers: tuple = (24, 16, 3), smartShield: bool = False, **kwargs) -> None:
         """
         Initializes with loaded model or creates random model
 
@@ -237,6 +237,8 @@ class SmartSnake(Snake):
             {"weights": neural net weight, "biases": neural net biases}, load neural net
         layers: tuple, default=(24, 16, 3)
             Layers architecture of neural network
+        smartShield: bool, default=False
+            Determines whether dangerous moves can be overwritten
 
         **kwargs:
             Parameters for base class
@@ -244,9 +246,9 @@ class SmartSnake(Snake):
         self.model = model
         self.layers = layers
         if model is None:
-            Snake.__init__(self, behaviors.AI(layers=layers), starvation=True, **kwargs)
+            Snake.__init__(self, behaviors.AI(layers=layers, smartShield=smartShield), starvation=True, **kwargs)
         else:
-            Snake.__init__(self, behaviors.AI(layers=layers, **model), starvation=True, **kwargs)
+            Snake.__init__(self, behaviors.AI(layers=layers, smartShield=smartShield, **model), starvation=True, **kwargs)
 
 
 class Player(Snake):
