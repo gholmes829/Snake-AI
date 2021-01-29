@@ -1,0 +1,9 @@
+EVOLUTION_2
+    Map size: (15, 15)
+    Population: 500
+    Starting size: 4
+    Vision: 15
+    Max hunger: 200
+    Refeed: 175
+    Fitness: ((snake_score)^3 * snake_age)/1000 + 1 if moved in all directions else 0
+    Cores: 4
