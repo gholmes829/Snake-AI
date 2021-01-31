@@ -135,7 +135,7 @@ class Driver:
 
     def _trainAI(self) -> None:
         """Trains AI snakes. Saves data and models in ../dna folder. Creates new folder for each training session."""
-        # setting validation
+        # settings validation
         if settings.populationSize < 5:
             print("\nError: Population size must be at least 5. Change size in settings.py.")
             return

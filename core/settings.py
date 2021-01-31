@@ -28,8 +28,8 @@ smartShield = True  # allow behavior to overwrite AI neural network decisions
 snakeParams = {"initialSize": initialSnakeSize, "vision": snakeVision, "maxHunger": maxHunger, "refeed": refeed}
 networkArchitecture = (24, 16, 3)  # FFNN layers
 
-populationSize = 50
-generations = 25
+populationSize = 250
+generations = 100
 displayTraining = False  # displays best snake after each generation during training
 
 cores = psutil.cpu_count(logical=False)  # number of CPU cores, not including logical processors

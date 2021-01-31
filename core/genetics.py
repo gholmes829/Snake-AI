@@ -5,8 +5,8 @@ Classes
 -------
 Genetics
 
-References: The psuedo-code of Genetics.evolve and Genetics.evaluate is very loosely based on that 
-      of https://github.com/valentinmace/snake/blob/master/genetic_algorithm.py.
+References: The psuedo-code of Genetics.evolve and Genetics.evaluate is loosely based on that 
+            of https://github.com/valentinmace/snake/blob/master/genetic_algorithm.py.
 """
 
 from copy import deepcopy
@@ -82,9 +82,9 @@ class Genetics:
                  task: callable,
                  fitness: callable,
                  mergeTraits: callable = None,
-                 crossoverRate: float = 0.7,
-                 mutationRate: float = 0.3,
-                 trials: int = 4
+                 crossoverRate: float = 0.3,
+                 mutationRate: float = 0.7,
+                 trials: int = 3
                  ) -> None:
         """
         Initializes.
@@ -360,7 +360,7 @@ class Genetics:
         -------
         list: list of created super mutants
         """
-        return [self._mutate(self.population[:5][i]) for i in range(5) for _ in range(2)]
+        return [self._mutate(self.population[i]) for i in range(3)]
 
     def _mutate(self, member: object) -> object:
         """
