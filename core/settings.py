@@ -12,29 +12,45 @@ import psutil
 
 title = "Snake AI"
 
+# SCREEN AND MAP
 screenSize = (600, 600)
 mapSize = (15, 15)
+area = mapSize[0] * mapSize[1]
+perimeter = 2 * (mapSize[0] + mapSize[1])
 
 gridColors = ("lightBlue", "mediumBlue", "mediumBlue")  # color of GUI window background
 
-targetFPS = 60
-smoothness = 3  # controls how fast and smooth animations run
+# FPS AND DISPLAY
+targetFPS = 120
+smoothness = 2  # controls how fast and smooth animations run
 
-initialSnakeSize = 4
-snakeVision = max(mapSize)  # how far rays are cast
-maxHunger = 200
-refeed = 175
-smartShield = True  # allow behavior to overwrite AI neural network decisions
-snakeParams = {"initialSize": initialSnakeSize, "vision": snakeVision, "maxHunger": maxHunger, "refeed": refeed}
-networkArchitecture = (24, 16, 3)  # FFNN layers
-
+# GENETICS
 populationSize = 250
 generations = 100
 displayTraining = False  # displays best snake after each generation during training
 
+# SNAKE
+initialSnakeSize = 4
+snakeVision = max(mapSize)  # how far rays are cast
+
+def calcHunger(size):
+    return 10 * ((area-perimeter)/(area**3)) * (size**3) + perimeter + 25
+
+def calcMaxHunger(size):
+    """Calculates how hungry quickly snake can starve based on its size"""
+    return calcHunger(size)
+    
+def calcRefeed(size):
+    """Calculates how much snake's hunger diminishes based on its size"""
+    return calcHunger(size)
+
+smartShield = True  # allow behavior to overwrite AI neural network decisions
+snakeParams = {"initialSize": initialSnakeSize, "vision": snakeVision, "maxHunger": calcMaxHunger, "refeed": calcRefeed}
+networkArchitecture = (24, 16, 3)  # FFNN layers
+
+# HELPER
 cores = psutil.cpu_count(logical=False)  # number of CPU cores, not including logical processors
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"  # hide Pygame greeting message
-
 
 def getInfo() -> str:
     """
@@ -45,6 +61,5 @@ def getInfo() -> str:
            "\n    Target generations: " + str(generations) + \
            "\n    Starting snake size: " + str(initialSnakeSize) + \
            "\n    Snake vision: " + str(snakeVision) + \
-           "\n    Max hunger: " + str(maxHunger) + \
-           "\n    Refeed bonus: " + str(refeed) + \
+           "\n    Smart shield: " + str(smartShield) + \
            "\n    Available CPU cores: " + str(cores)

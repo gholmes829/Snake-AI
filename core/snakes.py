@@ -72,8 +72,8 @@ class Snake:
                  starvation: bool = True,
                  initialSize: int = 4,
                  vision: int = 10,
-                 maxHunger: float = 200,
-                 refeed: float = 150,
+                 maxHunger: callable = lambda size: 200,
+                 refeed: callable = lambda size: 150,
                  color: tuple = None) -> None:
         """
         Initializes.
@@ -88,9 +88,9 @@ class Snake:
             Initial size of Snake's body
         vision: int, default=10
             Max number of steps Snake can see in
-        maxHunger: float, default=200.
+        maxHungerFunc: callable, default=lambda size: 200.
             Max hunger Snake can have before it dies
-        refeed: float, default=150.
+        refeedFunc: callable, default=lambda size: 150.
             How much Snake's hunger is reduces when it eats food
         color: tuple, optional
             Determines hunger of snake, color is random if not passed in
@@ -100,8 +100,11 @@ class Snake:
         self.starvation = starvation
         self.initialSize = initialSize
         self.vision = vision
-        self.maxHunger = maxHunger
-        self.refeed = refeed
+ 
+        self.maxHungerFunc = maxHunger
+        self.maxHunger = maxHunger(initialSize)
+        self.refeedFunc = refeed
+        self.refeed = refeed(initialSize)
 
         self.kwargs = {
             "starvation": starvation,
@@ -178,10 +181,13 @@ class Snake:
 
     def grow(self) -> None:
         """Increases body size by one, grows segment where tail used to be."""
+        self.score += 1
         self.body.append(self.prevTail)
         self.prevTail = (2 * self.prevTail[0] - self.body[-2][0], 2 * self.prevTail[1] - self.body[-2][1])
-        self.hunger = (self.hunger - self.refeed) * (self.hunger - self.refeed >= 0)
-        self.score += 1
+        self.maxHunger = self.maxHungerFunc(len(self))
+        self.refeed = self.refeedFunc(len(self))
+        self.hunger = (self.hunger - self.refeed) * ((self.hunger - self.refeed) >= 0)
+        print(self.refeed)
 
     def translate(self, origin: tuple) -> None:
         """
@@ -195,6 +201,10 @@ class Snake:
         self.body = [(origin[0] - self.head[0] + segment[0], origin[1] - self.head[1] + segment[1]) for segment in
                      self.body]
         self.head = origin
+        
+    def __len__(self):
+        """Returns length of snake's body"""
+        return len(self.body)
 
     @staticmethod
     def fitness(snake) -> None:
