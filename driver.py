@@ -77,7 +77,7 @@ class Driver:
         game.playGame(self.environment)
         print()
         self._checkSave()
-
+		
     def _playAI(self) -> None:
         """User selects saved model from .../dna/trained. Opens GUI window and AI plays game."""
         trainedFiles = os.listdir(self.modelPath)

@@ -13,6 +13,8 @@ from copy import deepcopy
 from random import choice, randint
 import numpy as np
 from joblib import Parallel, delayed
+#from cProfile import Profile
+#import pstats
 
 from core import settings
 
@@ -84,7 +86,7 @@ class Genetics:
                  mergeTraits: callable = None,
                  crossoverRate: float = 0.3,
                  mutationRate: float = 0.7,
-                 trials: int = 3
+                 trials: int = 4
                  ) -> None:
         """
         Initializes.
@@ -128,14 +130,15 @@ class Genetics:
 
     def evolve(self) -> None:
         """Evolves population."""
+        #pr = Profile()
+        #pr.enable()
         self.gen += 1
         self.generations[self.gen] = {}
 
         parents = self._selectParents(self.population)
         population = self.population + \
                     self._makeChildren(parents) + \
-                    self._makeMutants(self.population) + \
-                    self._makeSuperMutants(self.population)
+                    self._makeMutants(self.population)
 
         self.generations[self.gen]["population"] = self._evaluate(population)
         self.generations[self.gen]["population"].sort(key=lambda member: member["fitness"], reverse=True)
@@ -146,6 +149,9 @@ class Genetics:
             self.bestFitness = self.generations[self.gen]["best"]["fitness"]
 
         self.population = self._epigenetics([m["object"] for m in self.generations[self.gen]["population"]][:self.size])
+        #pr.disable()
+        #stats = pstats.Stats(pr).sort_stats("cumulative")
+        #stats.print_stats(30)
 
     def getGenStats(self, gen: int) -> dict:
         """
@@ -203,8 +209,9 @@ class Genetics:
         """
         members = []
 
-        trials = [Parallel(n_jobs=settings.cores)(delayed(self.task)(deepcopy(member)) for member in population) for _ in range(self.trials)]
-
+        trials = [Parallel(n_jobs=settings.cores)(delayed(self.task)(member) for member in population) for _ in range(self.trials)]  # parallelized
+        #trials = [[self.task(member) for member in population] for _ in range(self.trials)]  # non parallelized
+		
         for i in range(len(population)):
             fitness = np.mean([self.fitness(trials[j][i]) for j in range(self.trials)])
             score = np.max([trials[j][i].score for j in range(self.trials)])
@@ -260,11 +267,10 @@ class Genetics:
         -------
         MemberType: winner of tourney
         """
-        fitnesses = []
         for member in members:
             self.task(member)
-            fitnesses.append(self.fitness(member))
-        return members[max(range(len(fitnesses)), key=lambda i: fitnesses[i])]
+
+        return members[max(range(len(members)), key = lambda i: self.fitness(members[i]))]
 
     def _makeChildren(self, population: list) -> list:
         """
@@ -330,6 +336,7 @@ class Genetics:
         self.task(child1), self.task(child2)
         if self.mergeTraits is not None:
             self.mergeTraits(child1, parent1, parent2)
+            self.mergeTraits(child2, parent1, parent2)
         return {True: child1, False: child2}[self.fitness(child1) > self.fitness(child2)]
 
     def _makeMutants(self, population: list) -> list:

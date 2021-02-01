@@ -190,25 +190,26 @@ class Environment:
             rays[direction] = {"wall": 1 / distance * int(distance <= self.snake.vision), "food": 0, "body": 0}
 
         self.rays.clear()  # reset so rays contains info only of this instance
+		
         probe = None
-        for step in range(1, self.snake.vision + 1):  # take specified number of steps away from Snake's head
-            for ray, targets in rays.items():  # ...in each 8 octilinear directions
-                if step <= limits[ray]:  # don't let rays search outside of map borders
-                    probe = (origin[0] + ray[0] * step, origin[1] + ray[1] * step)  # update probe position
-                    if targets["food"] == 0 and self.gameMap[probe] == FOOD:  # if food not found yet and found food
-                        targets["food"] = 1 / Environment.dist(origin, probe)
-                    elif targets["body"] == 0 and self.gameMap[probe] == DANGER:  # if body not found yet and found body
-                        targets["body"] = 1 / Environment.dist(origin, probe)
-
-                if step == min(self.snake.vision, limits[ray]):  # add end of ray to list
-                    self.rays.append((origin, probe))
-
-        data = [0 for _ in range(24)]
+        for ray, targets in rays.items():  # ...in each 8 octilinear directions
+            bound = min(limits[ray], self.snake.vision)
+            step = 1
+            while not targets["food"] and not targets["body"] and step <= bound:  # take specified number of steps away from Snake's head and don't let rays search outside of map borders
+                probe = (origin[0] + ray[0] * step, origin[1] + ray[1] * step)  # update probe position
+                if not targets["food"] and self.gameMap[probe] == FOOD:  # if food not found yet and found food
+                    targets["food"] = 1 / Environment.dist(origin, probe)
+                elif not targets["body"] and self.gameMap[probe] == DANGER:  # if body not found yet and found body
+                    targets["body"] = 1 / Environment.dist(origin, probe)
+                step += 1	
+            self.rays.append((origin, (origin[0] + ray[0] * bound, origin[1] + ray[1] * bound)))  # add end of ray to list
+		
+        data = np.zeros(24)
 
         for i, direction in enumerate(DIRECTIONS):  # for each direction
-            for j, item in zip((0, 8, 16), ("food", "body", "wall")):
+            for j, item in ((0, "food"), (8, "body"), (16, "wall")):
                 # need to change reference so 'global up' will be 'Snake's left' is Snake if facing 'global right'
-                data[j + i] = rays[Environment.changeReference(snakeDirection, direction)][item]  # add data
+                data[i + j] = rays[Environment.changeReference(snakeDirection, direction)][item]  # add data
 
         # PRINT VALUES OF DATA TO DEBUG
         #for i in range(3):
@@ -216,7 +217,7 @@ class Environment:
         #        print(round(data[i * 8 + j], 3), end=" ")
         #    print()
         #self.display()
-        return np.array(data)
+        return data
 
     def _placeSnake(self) -> None:
         """Translate Snake to its starting coordinates."""

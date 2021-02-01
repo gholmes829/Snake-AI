@@ -16,17 +16,19 @@ title = "Snake AI"
 screenSize = (600, 600)
 mapSize = (15, 15)
 area = mapSize[0] * mapSize[1]
+order = 3
+areaParam = area**order
 perimeter = 2 * (mapSize[0] + mapSize[1])
 
 gridColors = ("lightBlue", "mediumBlue", "mediumBlue")  # color of GUI window background
 
 # FPS AND DISPLAY
-targetFPS = 120
-smoothness = 2  # controls how fast and smooth animations run
+targetFPS = 60
+smoothness = 3  # controls how fast and smooth animations run
 
 # GENETICS
-populationSize = 250
-generations = 100
+populationSize = 500
+generations = 250
 displayTraining = False  # displays best snake after each generation during training
 
 # SNAKE
@@ -34,7 +36,7 @@ initialSnakeSize = 4
 snakeVision = max(mapSize)  # how far rays are cast
 
 def calcHunger(size):
-    return 10 * ((area-perimeter)/(area**3)) * (size**3) + perimeter + 25
+    return 10 * ((area-perimeter)/areaParam) * (size**order) + perimeter + 10
 
 def calcMaxHunger(size):
     """Calculates how hungry quickly snake can starve based on its size"""

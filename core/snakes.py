@@ -187,7 +187,6 @@ class Snake:
         self.maxHunger = self.maxHungerFunc(len(self))
         self.refeed = self.refeedFunc(len(self))
         self.hunger = (self.hunger - self.refeed) * ((self.hunger - self.refeed) >= 0)
-        print(self.refeed)
 
     def translate(self, origin: tuple) -> None:
         """
@@ -225,14 +224,7 @@ class Snake:
         parent2: Snake
             Parent whose traits are passed down to child
         """
-        merged = []
-        for i in range(3):
-            mergeType = choice(["swap", "average"])
-            if mergeType == "swap":
-                merged.append(choice((parent1.color[i], parent2.color[i])))
-            else:
-                merged.append((parent1.color[i] + parent2.color[i]) / 2)
-        child.color = tuple(merged)
+        child.color = ((parent1.color[0] + parent2.color[0]) / 2, (parent1.color[1] + parent2.color[1]) / 2, (parent1.color[2] + parent2.color[2]) / 2)
 
 
 class SmartSnake(Snake):
