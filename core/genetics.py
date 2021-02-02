@@ -138,7 +138,8 @@ class Genetics:
         parents = self._selectParents(self.population)
         population = self.population + \
                     self._makeChildren(parents) + \
-                    self._makeMutants(self.population)
+                    self._makeMutants(self.population) + \
+                    self._makeSuperMutants(self.population)
 
         self.generations[self.gen]["population"] = self._evaluate(population)
         self.generations[self.gen]["population"].sort(key=lambda member: member["fitness"], reverse=True)
@@ -188,11 +189,11 @@ class Genetics:
         avg = np.mean(fitnesses)
         best = np.max(fitnesses)
         print("RESULTS FOR GEN:", gen)
-        print("\tBest fitness:", round(best, 2))
-        print("\tAverage top 10% fitness:", round(top10Avg, 2))
-        print("\tAverage top 25% fitness:", round(top25Avg, 2))
-        print("\tAverage fitness:", round(avg, 2))
-        print("\tHighest score:", maxScore)
+        print("    Highest score:", maxScore)
+        print("    Best fitness:", round(best, 2))
+        print("    Average top 10% fitness:", round(top10Avg, 2))
+        print("    Average top 25% fitness:", round(top25Avg, 2))
+        print("    Average fitness:", round(avg, 2))
 
     def _evaluate(self, population: list) -> list:
         """
@@ -208,9 +209,15 @@ class Genetics:
         list: list of members paired with their stats in form of {"object": MemberType, "fitness": float, "score": float}
         """
         members = []
-
-        trials = [Parallel(n_jobs=settings.cores)(delayed(self.task)(member) for member in population) for _ in range(self.trials)]  # parallelized
-        #trials = [[self.task(member) for member in population] for _ in range(self.trials)]  # non parallelized
+		
+        try:
+            trials = [Parallel(n_jobs=settings.cores)(delayed(self.task)(member) for member in population) for _ in range(self.trials)]  # parallelized
+        except KeyboardInterrupt:
+            raise KeyboardInterrupt
+        except:
+            print("WARNING: An exception during parallelized evaluation has occured. Attempting to restart evaluation.\n")
+            return self._evaluate(population)
+		#trials = [[self.task(member) for member in population] for _ in range(self.trials)]  # non parallelized
 		
         for i in range(len(population)):
             fitness = np.mean([self.fitness(trials[j][i]) for j in range(self.trials)])

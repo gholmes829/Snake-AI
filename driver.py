@@ -13,6 +13,7 @@ import sys
 import json
 import numpy as np
 from time import time
+from datetime import datetime
 
 from core import genetics, game, environments, snakes, settings
 
@@ -162,15 +163,24 @@ class Driver:
         task = game.playTrainingGame
         colorCross = snakes.Snake.mergeTraits
         snakeDNA = genetics.Genetics(initialPopulation, task, fitness, mergeTraits=None)
-
+        trainingTimer = time()
+		
         # train each generation
         print("\nPOPULATION SIZE:", population, "\nGENERATIONS:", generations, "\n")
         for gen in range(1, generations + 1):
             timer = time()
             snakeDNA.evolve()
+			
             elapsed = round(time() - timer, 2)
+            elapsedTotal = round(time() - trainingTimer, 2)
+            currentTime = datetime.now()
+            strTime = currentTime.strftime("%H:%M:%S")
+			
             snakeDNA.printGenStats(gen)
-            print("\tTime elapsed:", elapsed, "secs")
+			
+            print("    Generation took:", str(int(elapsed//60)) + " mins " + str(elapsed%60) + " secs")
+            print("    Total time elapsed:", str(int(elapsedTotal//60)) + " mins " + str(elapsedTotal%60) + " secs")
+            print("    Time of day:", strTime + " " + str({0: "AM", 1: "PM"}[currentTime.hour>=12]))
             bestSnake = snakeDNA.generations[gen]["best"]["object"]
             
             if settings.displayTraining:
