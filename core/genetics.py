@@ -9,10 +9,13 @@ References: The psuedo-code of Genetics.evolve and Genetics.evaluate is loosely 
             of https://github.com/valentinmace/snake/blob/master/genetic_algorithm.py.
 """
 
+import sys
+
 from copy import deepcopy
 from random import choice, randint
 import numpy as np
 from joblib import Parallel, delayed
+from datetime import datetime
 #from cProfile import Profile
 #import pstats
 
@@ -195,7 +198,7 @@ class Genetics:
         print("    Average top 25% fitness:", round(top25Avg, 2))
         print("    Average fitness:", round(avg, 2))
 
-    def _evaluate(self, population: list) -> list:
+    def _evaluate(self, population: list, parallelize: bool = True) -> list:
         """
         Uses multi-core parallel processing to evaluate performance of each member in population.
 
@@ -203,6 +206,8 @@ class Genetics:
         ----------
         population: list
             Population to evaluate members from
+		parallelize: bool, default=True
+			Whether to parallelize operation
 
         Returns
         -------
@@ -210,14 +215,21 @@ class Genetics:
         """
         members = []
 		
-        try:
-            trials = [Parallel(n_jobs=settings.cores)(delayed(self.task)(member) for member in population) for _ in range(self.trials)]  # parallelized
-        except KeyboardInterrupt:
-            raise KeyboardInterrupt
-        except:
-            print("WARNING: An exception during parallelized evaluation has occured. Attempting to restart evaluation.\n")
-            return self._evaluate(population)
-		#trials = [[self.task(member) for member in population] for _ in range(self.trials)]  # non parallelized
+        if parallelize:
+            try:
+                trials = [Parallel(n_jobs=settings.cores)(delayed(self.task)(member) for member in population) for _ in range(self.trials)]  # parallelized
+            except KeyboardInterrupt:
+                print("Recieved keyboard interrupt signal. Exiting!")
+                sys.exit()
+            except Exception as e:
+                print("EXCEPTION", e)
+                print()
+                currentTime = datetime.now()
+                strTime = str(int(currentTime.hour%13)) + ":" + currentTime.strftime("%M:%S") + " " + str({0: "AM", 1: "PM"}[currentTime.hour>=12])
+                print("WARNING: An exception during parallelized evaluation has occured at " + strTime + ". Attempting to restart evaluation without parallelization.\n")
+                return self._evaluate(population, parallelize=False)
+        else:
+            trials = [[self.task(member) for member in population] for _ in range(self.trials)]  # non parallelized
 		
         for i in range(len(population)):
             fitness = np.mean([self.fitness(trials[j][i]) for j in range(self.trials)])
