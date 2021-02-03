@@ -221,7 +221,7 @@ class Genetics:
             except KeyboardInterrupt:
                 print("Recieved keyboard interrupt signal. Exiting!")
                 sys.exit()
-            except Exception as e:
+            except Exception as e:  # failures with process serialization and synchronization
                 print("EXCEPTION:", e)
                 print()
                 currentTime = datetime.now()
