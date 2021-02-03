@@ -215,21 +215,20 @@ class Genetics:
         """
         members = []
 		
-        if parallelize:
+        if parallelize and settings.cores > 1:
             try:
-                trials = [Parallel(n_jobs=settings.cores)(delayed(self.task)(member) for member in population) for _ in range(self.trials)]  # parallelized
+                trials = [Parallel(n_jobs=-1)(delayed(self.task)(deepcopy(member)) for member in population) for _ in range(self.trials)]  # parallelized
             except KeyboardInterrupt:
                 print("Recieved keyboard interrupt signal. Exiting!")
                 sys.exit()
             except Exception as e:  # failures with process serialization and synchronization
                 print("EXCEPTION:", e)
                 print()
-                currentTime = datetime.now()
-                strTime = str(int(currentTime.hour%13 + int(currentTime.hour > 12))) + ":" + currentTime.strftime("%M:%S") + " " + str({0: "AM", 1: "PM"}[currentTime.hour>=12])
+                currentTime = datetime.now().strftime("%H:%M:%S")
                 print("WARNING: An exception during parallelized evaluation has occured at " + strTime + ". Attempting to restart evaluation without parallelization.\n")
                 return self._evaluate(population, parallelize=False)
         else:
-            trials = [[self.task(member) for member in population] for _ in range(self.trials)]  # non parallelized
+            trials = [[self.task(deepcopy(member)) for member in population] for _ in range(self.trials)]  # non parallelized
 		
         for i in range(len(population)):
             fitness = np.mean([self.fitness(trials[j][i]) for j in range(self.trials)])
@@ -387,9 +386,11 @@ class Genetics:
         list: list of created super mutants
         """
         superMutants = []
+        pool = population[:10]
 		
-        for _ in range(3):
-            candidate, sponsor = population[randint(0, 5)], population[randint(0, 10)]
+        for i in range(3):
+            candidate, sponsor = pool[randint(0, 4-i)], pool[randint(0, 9-i)]
+            pool.remove(candidate)
             superMutants.append(self._crossover(self._mutate(candidate), sponsor))
 		
         return superMutants

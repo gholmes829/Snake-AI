@@ -1,8 +1,0 @@
-EVOLUTION_8    Map size: (15, 15)
-    Population: 250
-    Target generations: 500
-    Starting snake size: 4
-    Snake vision: 15
-    Smart shield: True
-    Available CPU cores: 6
-    Fitness: ((snake_score)^3 * snake_age)/1000 + 1 if moved in all directions else 0
