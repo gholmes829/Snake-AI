@@ -386,11 +386,11 @@ class Genetics:
         -------
         list: list of created super mutants
         """
-		superMutants = []
+        superMutants = []
 		
-		for _ in range(3):
-			candidate, sponsor = population[randint(0, 5)], population[randint(0, 10)]
-			superMutants.append(self._crossover(self._mutate(candidate), sponsor))
+        for _ in range(3):
+            candidate, sponsor = population[randint(0, 5)], population[randint(0, 10)]
+            superMutants.append(self._crossover(self._mutate(candidate), sponsor))
 		
         return superMutants
 
