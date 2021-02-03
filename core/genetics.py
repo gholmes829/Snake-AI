@@ -141,7 +141,8 @@ class Genetics:
         parents = self._selectParents(self.population)
         population = self.population + \
                     self._makeChildren(parents) + \
-                    self._makeMutants(self.population)
+                    self._makeMutants(self.population) + \
+					self._makeSuperMutants(self.population)
 
         self.generations[self.gen]["population"] = self._evaluate(population)
         self.generations[self.gen]["population"].sort(key=lambda member: member["fitness"], reverse=True)
@@ -372,7 +373,7 @@ class Genetics:
         """
         return [self._mutate(population[randint(0, self.size - 1)]) for _ in range(self.mutations)]
         
-    def _makeSuperMutants(self, population):
+    def _makeSuperMutants(self, population: list) -> list:
         """
         Make super mutants (mutants based off top performing members) from given population.
 
@@ -385,7 +386,13 @@ class Genetics:
         -------
         list: list of created super mutants
         """
-        return [self._mutate(self.population[i]) for i in range(2)]
+		superMutants = []
+		
+		for _ in range(3):
+			candidate, sponsor = population[randint(0, 5)], population[randint(0, 10)]
+			superMutants.append(self._crossover(self._mutate(candidate), sponsor))
+		
+        return superMutants
 
     def _mutate(self, member: object) -> object:
         """
