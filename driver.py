@@ -175,7 +175,7 @@ class Driver:
             elapsedTotal = round(time() - trainingTimer, 2)
             currentTime = datetime.now()
 			
-            strTime = str(int(currentTime.hour%13)) + ":" + currentTime.strftime("%M:%S") + " " + str({0: "AM", 1: "PM"}[currentTime.hour>=12])
+            strTime = str(int(currentTime.hour%13 + int(currentTime.hour > 12))) + ":" + currentTime.strftime("%M:%S") + " " + str({0: "AM", 1: "PM"}[currentTime.hour>=12])
             generationTime = str(int(elapsed//3600)) + " hrs " + str(int(elapsed//60)) + " mins " + str(int(elapsed%60)) + " secs"
             totalTime = str(int(elapsedTotal//3600)) + " hrs " + str(int(elapsedTotal//60)) + " mins " + str(int(elapsedTotal%60)) + " secs"
 			

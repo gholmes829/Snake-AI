@@ -141,8 +141,7 @@ class Genetics:
         parents = self._selectParents(self.population)
         population = self.population + \
                     self._makeChildren(parents) + \
-                    self._makeMutants(self.population) + \
-                    self._makeSuperMutants(self.population)
+                    self._makeMutants(self.population)
 
         self.generations[self.gen]["population"] = self._evaluate(population)
         self.generations[self.gen]["population"].sort(key=lambda member: member["fitness"], reverse=True)
@@ -222,10 +221,10 @@ class Genetics:
                 print("Recieved keyboard interrupt signal. Exiting!")
                 sys.exit()
             except Exception as e:
-                print("EXCEPTION", e)
+                print("EXCEPTION:", e)
                 print()
                 currentTime = datetime.now()
-                strTime = str(int(currentTime.hour%13)) + ":" + currentTime.strftime("%M:%S") + " " + str({0: "AM", 1: "PM"}[currentTime.hour>=12])
+                strTime = str(int(currentTime.hour%13 + int(currentTime.hour > 12))) + ":" + currentTime.strftime("%M:%S") + " " + str({0: "AM", 1: "PM"}[currentTime.hour>=12])
                 print("WARNING: An exception during parallelized evaluation has occured at " + strTime + ". Attempting to restart evaluation without parallelization.\n")
                 return self._evaluate(population, parallelize=False)
         else:
@@ -386,7 +385,7 @@ class Genetics:
         -------
         list: list of created super mutants
         """
-        return [self._mutate(self.population[i]) for i in range(3)]
+        return [self._mutate(self.population[i]) for i in range(2)]
 
     def _mutate(self, member: object) -> object:
         """

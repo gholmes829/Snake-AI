@@ -30,8 +30,8 @@ targetFPS = 60
 smoothness = 3  # controls how fast and smooth animations run
 
 # GENETICS
-populationSize = 500
-generations = 250
+populationSize = 375
+generations = 500
 displayTraining = False  # displays best snake after each generation during training
 
 # SNAKE
@@ -39,7 +39,7 @@ initialSnakeSize = 4
 snakeVision = max(mapSize)  # how far rays are cast
 
 def calcHunger(size):
-    return a * (size**order) + b
+    return min(a * (size**order) + b, mapSize[0] * mapSize[1])
 
 def calcMaxHunger(size):
     """Calculates how hungry quickly snake can starve based on its size"""
