@@ -48,7 +48,7 @@ def playTrainingGame(snake: snakes.Snake, render: bool = False) -> None:
     """
     environment = environments.Environment(snake, settings.mapSize)
     playGame(environment, render=render)
-    return snake
+    return {"fitness": snakes.Snake.fitness(snake),  "score": snake.score}
 
 
 def _simulateGame(environment: environments.Environment):

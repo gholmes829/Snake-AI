@@ -14,6 +14,7 @@ import json
 import numpy as np
 from time import time
 from datetime import datetime
+import psutil
 
 from core import genetics, game, environments, snakes, settings
 
@@ -33,8 +34,11 @@ class Driver:
         Path to replay folder
     dnaPath: str
         Path to dna folder
-    modelPath: path to model folder
-
+    modelPath:
+        path to model folder
+    seedPath:
+        path to model/seeds
+	
     Public Methods
     --------------
     run() -> None
@@ -46,6 +50,7 @@ class Driver:
         self.replayPath = os.path.join(os.getcwd(), "replays")
         self.dnaPath = os.path.join(os.getcwd(), "dna")
         self.modelPath = os.path.join(os.getcwd(), "trained")
+        self.seedPath = os.path.join(self.modelPath, "seeds")
         print("    +" + "="*8 + "+")
         print("    |SNAKE AI|")
         print("    +" + "="*8 + "+")
@@ -137,8 +142,8 @@ class Driver:
     def _trainAI(self) -> None:
         """Trains AI snakes. Saves data and models in ../dna folder. Creates new folder for each training session."""
         # settings validation
-        if settings.populationSize < 5:
-            print("\nError: Population size must be at least 5. Change size in settings.py.")
+        if settings.populationSize < 10:
+            print("\nError: Population size must be at least 10. Change size in settings.py.")
             return
             
         # initialize paths and files
@@ -147,22 +152,51 @@ class Driver:
             currEvolution = max([int(file[file.index("_")+1:]) for file in dnaFiles if file[:10] == "evolution_"]) + 1
         else:
             currEvolution = 1
-        name = "evolution_" + str(currEvolution)
-        evolutionPath = os.path.join(self.dnaPath, name)
+ 
+        evolutionPath = os.path.join(self.dnaPath, "evolution_" + str(currEvolution))
         os.mkdir(evolutionPath)
-        text = name.upper() + settings.getInfo() + "\n    Fitness: " + snakes.Snake.fitness.__doc__[9:-9]
+        data = {
+            "evolution": currEvolution,
+            "settings": settings.getDictInfo(),
+            "fitness": snakes.Snake.fitness.__doc__[9:-9],
+            "architecture": settings.networkArchitecture
+        }
 
         # write settings for this training session
-        with open(os.path.join(evolutionPath, "settings.txt"), "w") as f:
-            f.write(text)
+        with open(os.path.join(evolutionPath, "settings.json"), "w") as f:
+            json.dump(data, f, indent=4)
 
         # initialize training parameters
         population, generations = settings.populationSize, settings.generations
-        initialPopulation = [snakes.SmartSnake(layers=settings.networkArchitecture, **settings.snakeParams) for _ in range(population)]
-        fitness = snakes.Snake.fitness
+		
+        seedFiles = os.listdir(self.seedPath)
+        numSeeds = len(seedFiles)
+
+        # add combinatorics for crossover
+        if numSeeds > 0 and Driver.getValidInput("Select population seed:\n\t1) Random\n\t2) Starter models in ...trained/seeds, n=" + str(numSeeds), dtype=int, valid=range(1, 3)) - 1:
+            initialPopulation = []
+            for modelFile in seedFiles[:-1]:
+                data = np.load(os.path.join(self.modelPath, modelFile), allow_pickle=True)
+                model = {
+                    "weights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
+                    "biases": [np.asarray(layer, dtype=float) for layer in data["biases"]]
+                    }
+                clone = snakes.SmartSnake(layers=settings.networkArchitecture, **settings.snakeParams, model=model)
+                initialPopulation += [genetics.Genetics._mutate(clone) for _ in range(int(population/numSeeds)-1)] + [clone]
+            data = np.load(os.path.join(self.modelPath, seedFiles[-1]), allow_pickle=True)
+            model = {
+                "weights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
+                "biases": [np.asarray(layer, dtype=float) for layer in data["biases"]]
+                }
+            clone = snakes.SmartSnake(layers=settings.networkArchitecture, **settings.snakeParams, model=model)
+            initialPopulation += [genetics.Genetics._mutate(clone) for _ in range(population-len(initialPopulation)-1)] + [clone] 
+			
+        else:
+            initialPopulation = [snakes.SmartSnake(layers=settings.networkArchitecture, **settings.snakeParams) for _ in range(population)]
+		
         task = game.playTrainingGame
         colorCross = snakes.Snake.mergeTraits
-        snakeDNA = genetics.Genetics(initialPopulation, task, fitness, mergeTraits=None)
+        snakeDNA = genetics.Genetics(initialPopulation, task, mergeTraits=None)
         trainingTimer = time()
 		
         # train each generation
@@ -178,12 +212,12 @@ class Driver:
             generationTime = str(int(elapsed//3600)) + " hrs " + str(int((elapsed//60)%60)) + " mins " + str(int(elapsed%60)) + " secs"
             totalTime = str(int(elapsedTotal//3600)) + " hrs " + str(int((elapsedTotal//60)%60)) + " mins " + str(int(elapsedTotal%60)) + " secs"
 			
-            snakeDNA.printGenStats(gen)
-			
+            snakeDNA.printGenStats()
+            print("    Current memory usage:", str(psutil.virtual_memory()[2]) + str("%"))
             print("    Generation took:", generationTime)
             print("    Total time elapsed:", totalTime)
             print("    Time of day:", currentTime)
-            bestSnake = snakeDNA.generations[gen]["best"]["object"]
+            bestSnake = snakeDNA.generation["best"]["object"]
             
             if settings.displayTraining:
                 game.playTrainingGame(bestSnake, render=True)  # best snake of gen plays game in GUI window
@@ -192,7 +226,7 @@ class Driver:
             generationPath = os.path.join(evolutionPath, "generation_" + str(gen))
             os.mkdir(generationPath)
             f = open(os.path.join(generationPath, "analytics.json"), "w")
-            data = snakeDNA.getGenStats(gen)
+            data = snakeDNA.getGenStats()
             data["time"] = elapsed
             json.dump(data, f, indent=4)
             f.close()
@@ -206,6 +240,7 @@ class Driver:
                 color=np.array(bestSnake.color)
             )
             print()
+        snakeDNA.cleanup()
 
     def _watchReplay(self) -> None:
         """Gets data from last game and replays it in GUI window"""

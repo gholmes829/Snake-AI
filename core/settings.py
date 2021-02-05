@@ -5,6 +5,8 @@ Functions
 ---------
 getInfo() -> str
        Provides basic info about settings in str format.
+getDictInfo() -> str
+       Provides basic info about settings in dict format.
 """
 import os
 
@@ -30,8 +32,8 @@ targetFPS = 60
 smoothness = 3  # controls how fast and smooth animations run
 
 # GENETICS
-populationSize = 250
-generations = 500
+populationSize = 500
+generations = 1000
 displayTraining = False  # displays best snake after each generation during training
 
 # SNAKE
@@ -68,3 +70,18 @@ def getInfo() -> str:
            "\n    Snake vision: " + str(snakeVision) + \
            "\n    Smart shield: " + str(smartShield) + \
            "\n    Available CPU cores: " + str(cores)
+
+def getDictInfo() -> dict:
+    """
+	Provides basic info in dict form.
+    """
+    return {
+        "map size": mapSize,
+        "population": populationSize,
+        "generations": generations,
+        "snake size": initialSnakeSize,
+        "snake vision": snakeVision,
+        "smart shield": smartShield,
+        "CPU cores": cores
+    }
+		   

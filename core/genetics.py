@@ -14,8 +14,9 @@ import sys
 from copy import deepcopy
 from random import choice, randint
 import numpy as np
-from joblib import Parallel, delayed
+from multiprocessing import Pool
 from datetime import datetime
+
 #from cProfile import Profile
 #import pstats
 
@@ -81,11 +82,12 @@ class Genetics:
         Gets score and fitness stats from a given generation.
     printGenStats(gen: int) -> None:
         Prints analytics of given generation to terminal.
+    cleanup() -> None:
+        Closes and joins processes.
     """
     def __init__(self,
                  initialPopulation: list,
                  task: callable,
-                 fitness: callable,
                  mergeTraits: callable = None,
                  crossoverRate: float = 0.3,
                  mutationRate: float = 0.7,
@@ -99,9 +101,7 @@ class Genetics:
         initialPopulation: list
             Gen 0 population
         task: callable
-            Task members will learn to do
-        fitness: callable
-            Function that can evaluate MemberType that returns fitness score
+            Task members will learn to do, should return dictionary with 'fitness' and 'score' keys
         mergeTraits: callable, optional
             Function called on parents during cross over to merge non essential traits like colors or names
         crossoverRate: float, default=0.3
@@ -111,9 +111,10 @@ class Genetics:
         trials: int, default=4
             Number of performances will be averaged to determine member fitness
         """
+        self.pool = Pool(processes=settings.cores)
+		
         self.population = initialPopulation
         self.task = task
-        self.fitness = fitness
         self.mergeTraits = mergeTraits
 
         self.size = len(initialPopulation)
@@ -124,11 +125,11 @@ class Genetics:
         self.gen = 0
 
         self.best, self.bestFitness = None, 0
-        self.generations = {
-            0: {
-                "best": {"object": None, "fitness": 0, "score": 0},
-                "population": [{"object": member, "fitness": 0, "score": 0} for member in self.population]
-            }
+		
+        self.parents = []
+        self.generation = {
+            "best": {"object": None, "fitness": 0, "score": 0},
+            "population": [{"object": member, "fitness": 0, "score": 0} for member in self.population]
         }
 
     def evolve(self) -> None:
@@ -136,68 +137,59 @@ class Genetics:
         #pr = Profile()
         #pr.enable()
         self.gen += 1
-        self.generations[self.gen] = {}
+        population = self._makePopulation(self.population)
 
-        parents = self._selectParents(self.population)
-        population = self.population + \
-                    self._makeChildren(parents) + \
-                    self._makeMutants(self.population) + \
-					self._makeSuperMutants(self.population)
+        self.generation["population"] = self._evaluate(population)
+        self.generation["population"].sort(key=lambda member: member["fitness"], reverse=True)
+        self.generation["best"] = self.generation["population"][0]
 
-        self.generations[self.gen]["population"] = self._evaluate(population)
-        self.generations[self.gen]["population"].sort(key=lambda member: member["fitness"], reverse=True)
-        self.generations[self.gen]["best"] = self.generations[self.gen]["population"][0]
+        if self.generation["best"]["fitness"] > self.bestFitness:
+            self.best = self.generation["best"]["object"]
+            self.bestFitness = self.generation["best"]["fitness"]
 
-        if self.generations[self.gen]["best"]["fitness"] > self.bestFitness:
-            self.best = self.generations[self.gen]["best"]["object"]
-            self.bestFitness = self.generations[self.gen]["best"]["fitness"]
-
-        self.population = self._epigenetics([m["object"] for m in self.generations[self.gen]["population"]][:self.size])
+        self.population = self._epigenetics([m["object"] for m in self.generation["population"]][:self.size])
         #pr.disable()
         #stats = pstats.Stats(pr).sort_stats("cumulative")
         #stats.print_stats(30)
 
-    def getGenStats(self, gen: int) -> dict:
+    def getGenStats(self) -> dict:
         """
         Gets score and fitness stats from a given generation.
-
-        Parameters
-        ----------
-        gen: int
-            Generation to get stats from
 
         Returns
         -------
         dict: stats in form of {"highScore": highest score from generation, "fitnesses": list of fitnesses}
         """
-        scores = [float(snake["score"]) for snake in self.generations[gen]["population"]]
+        scores = [float(snake["score"]) for snake in self.generation["population"]]
         scores.sort(reverse=True)
         highScore = float(max(scores))
-        fitnesses = [float(snake["fitness"]) for snake in self.generations[gen]["population"]]
+        fitnesses = [float(snake["fitness"]) for snake in self.generation["population"]]
         return {"highScore": highScore, "scores": scores, "fitnesses": fitnesses}
 
-    def printGenStats(self, gen: int) -> None:
+    def printGenStats(self) -> None:
         """
         Prints analytics of given generation to terminal.
 
-        Parameters
-        ----------
-        gen: int
-            Generation to print stats from
         """
-        maxScore = max([snake["score"] for snake in self.generations[gen]["population"]])
-        fitnesses = [snake["fitness"] for snake in self.generations[gen]["population"]]
+        maxScore = max([snake["score"] for snake in self.generation["population"]])
+        fitnesses = [snake["fitness"] for snake in self.generation["population"]]
         top10Avg = np.mean(fitnesses[:int(0.1 * self.size)])
         top25Avg = np.mean(fitnesses[:int(0.25 * self.size)])
         avg = np.mean(fitnesses)
         best = np.max(fitnesses)
-        print("RESULTS FOR GEN:", gen)
+        print("RESULTS FOR GEN:", self.gen)
         print("    Highest score:", maxScore)
-        print("    Best fitness:", round(best, 2))
-        print("    Average top 10% fitness:", round(top10Avg, 2))
-        print("    Average top 25% fitness:", round(top25Avg, 2))
         print("    Average fitness:", round(avg, 2))
+        print("    Best fitness:", round(best, 2))
+        print("    Top 10% fitness:", round(top10Avg, 2))
+        print("    Top 25% fitness:", round(top25Avg, 2))
 
+
+    def cleanup(self) -> None:
+        """Cleans up multiprocessing pool"""
+        self.pool.close()
+        self.pool.join()
+		
     def _evaluate(self, population: list, parallelize: bool = True) -> list:
         """
         Uses multi-core parallel processing to evaluate performance of each member in population.
@@ -217,7 +209,7 @@ class Genetics:
 		
         if parallelize and settings.cores > 1:
             try:
-                trials = [Parallel(n_jobs=-1)(delayed(self.task)(deepcopy(member)) for member in population) for _ in range(self.trials)]  # parallelized
+                trials = [self.pool.map(self.task, population) for _ in range(self.trials)]  # parallelized
             except KeyboardInterrupt:
                 print("Recieved keyboard interrupt signal. Exiting!")
                 sys.exit()
@@ -225,41 +217,72 @@ class Genetics:
                 print("EXCEPTION:", e)
                 print()
                 currentTime = datetime.now().strftime("%H:%M:%S")
-                print("WARNING: An exception during parallelized evaluation has occured at " + strTime + ". Attempting to restart evaluation without parallelization.\n")
+                print("WARNING: An exception during parallelized evaluation has occured at " + currentTime + ". Attempting to restart evaluation without parallelization.\n")
                 return self._evaluate(population, parallelize=False)
         else:
-            trials = [[self.task(deepcopy(member)) for member in population] for _ in range(self.trials)]  # non parallelized
+            trials = [[self.task(member) for member in population] for _ in range(self.trials)]  # non parallelized
 		
         for i in range(len(population)):
-            fitness = np.mean([self.fitness(trials[j][i]) for j in range(self.trials)])
-            score = np.max([trials[j][i].score for j in range(self.trials)])
+            fitness = np.mean([trials[j][i]["fitness"] for j in range(self.trials)])
+            score = np.max([trials[j][i]["score"] for j in range(self.trials)])
             members.append({"object": population[i], "fitness": fitness, "score": score})
 
         return members
 
-    def _selectParents(self, population: list) -> list:
+    def _makePopulation(self, population: list, parallelize: bool = True) -> list:
         """
-        Provides list of parent candidates from population.
+        Uses multi-core parallel processing to generate population for generation.
 
         Parameters
         ----------
         population: list
-            Population to select parents from
+            Initial population to generate members from
+		parallelize: bool, default=True
+			Whether to parallelize operation
+
+        Returns
+        -------
+        list: list of population members
+        """
+        if parallelize and settings.cores > 1:
+            try:
+                #pool = Pool(processes=settings.cores)
+                self.parents = self.pool.starmap(self._selectParent, [() for _ in range(self.crossovers)])
+                children = self.pool.starmap(self._makeChild, [() for _ in range(self.crossovers)])
+                #pool.close()
+                #pool.join()
+            except KeyboardInterrupt:
+                print("Recieved keyboard interrupt signal. Exiting!")
+                sys.exit()
+            except Exception as e:  # failures with process serialization and synchronization
+                print("EXCEPTION:", e)
+                print()
+                currentTime = datetime.now().strftime("%H:%M:%S")
+                print("WARNING: An exception during parallelized evaluation has occured at " + currentTime + ". Attempting to restart evaluation without parallelization.\n")
+                return self._makePopulation(population, parallelize=False)
+        else:
+            self.parents = self._selectParents()
+            children = self._makeChildren()
+			
+        population = self.population + \
+                    children + \
+                    self._makeMutants()
+					
+        return population
+		
+    def _selectParents(self) -> list:
+        """
+        Provides list of parent candidates from population.
 
         Returns
         -------
         list: list of selected parents
         """
-        return [self._selectParent(population) for _ in range(self.crossovers)]
+        return [self._selectParent() for _ in range(self.crossovers)]
 
-    def _selectParent(self, population: list) -> object:
+    def _selectParent(self) -> object:
         """
         Selects winner of 3 member tourney as parent.
-
-        Parameters
-        ----------
-        population: list
-            Population to select parent from
 
         Returns
         -------
@@ -267,7 +290,7 @@ class Genetics:
         """
         members = []
         while len(members) < 3:
-            member = population[randint(0, self.size - 1)]
+            member = self.population[randint(0, self.size - 1)]
             if member not in members:
                 members.append(member)
         return self._tourney(*members)
@@ -285,42 +308,29 @@ class Genetics:
         -------
         MemberType: winner of tourney
         """
-        for member in members:
-            self.task(member)
+        return members[np.argmax([self.task(member)["fitness"] for member in members])]
 
-        return members[max(range(len(members)), key = lambda i: self.fitness(members[i]))]
-
-    def _makeChildren(self, population: list) -> list:
+    def _makeChildren(self) -> list:
         """
         Make children from a given population.
-
-        Parameters
-        ----------
-        population: list
-            Population to make children from
 
         Returns
         -------
         list: list of created children
         """
-        return [self._makeChild(population) for _ in range(self.crossovers)]
+        return [self._makeChild() for _ in range(self.crossovers)]
 
-    def _makeChild(self, population: list) -> object:
+    def _makeChild(self) -> object:
         """
         Make child by crossing over two random members from better end of population.
-
-        Parameters
-        ----------
-        population: list
-            Population to select parents from.
-
+		
         Returns
         -------
         MemberType: child
         """
         parents = []
         while len(parents) < 2:
-            parent = population[randint(0, self.crossovers - 1)]
+            parent = self.parents[randint(0, self.crossovers - 1)]
             if parent not in parents:
                 parents.append(parent)
         return self._crossover(parents[0], parents[1])
@@ -351,42 +361,39 @@ class Genetics:
         brain1[target][randLayer][randTargetElement] = brain2[target][randLayer][randTargetElement]
         brain2[target][randLayer][randTargetElement] = temp[target][randLayer][randTargetElement]
 
-        self.task(child1), self.task(child2)
+        fitness1, fitness2 = self.task(child1)["fitness"], self.task(child2)["fitness"]
         if self.mergeTraits is not None:
             self.mergeTraits(child1, parent1, parent2)
             self.mergeTraits(child2, parent1, parent2)
-        return {True: child1, False: child2}[self.fitness(child1) > self.fitness(child2)]
+        return {True: child1, False: child2}[fitness1 > fitness2]
 
-    def _makeMutants(self, population: list) -> list:
+    def _makeMutants(self) -> list:
         """
         Make mutants from given population.
-
-        Parameters
-        ----------
-        population: list
-            Population to make mutants from
 
         Returns
         -------
         list: list of created mutants
         """
-        return [self._mutate(population[randint(0, self.size - 1)]) for _ in range(self.mutations)]
+        weaklyMutated = [self._mutate(self.population[randint(0, self.size - 1)]) for _ in range(int(0.9 * self.mutations))]
+        stronglyMutated = []
+        for _ in range(int(0.1 * self.mutations)):
+            mutant = deepcopy(self.population[randint(0, self.size - 1)])
+            for _ in range(randint(2, 4)):
+                mutant = self._mutate(mutant)
+            stronglyMutated.append(mutant)
+        return weaklyMutated + stronglyMutated
         
-    def _makeSuperMutants(self, population: list) -> list:
+    def _makeSuperMutants(self) -> list:
         """
         Make super mutants (mutants based off top performing members) from given population.
-
-        Parameters
-        ----------
-        population: list
-            Population to make mutants from
 
         Returns
         -------
         list: list of created super mutants
         """
         superMutants = []
-        pool = population[:10]
+        pool = self.population[:10]
 		
         for i in range(3):
             candidate, sponsor = pool[randint(0, 4-i)], pool[randint(0, 9-i)]
@@ -395,7 +402,8 @@ class Genetics:
 		
         return superMutants
 
-    def _mutate(self, member: object) -> object:
+    @staticmethod
+    def _mutate(member: object) -> object:
         """
         Provides mutated clone of member.
 
@@ -445,3 +453,11 @@ class Genetics:
             population[index] = self._mutate(member)
 
         return population
+		
+    def __getstate__(self) -> dict:
+        internalState = self.__dict__.copy()
+        del internalState["pool"]
+        return internalState
+		
+    def __setstate__(self, state: dict) -> None:
+        self.__dict__.update(state)

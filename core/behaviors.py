@@ -183,7 +183,7 @@ class AI(neural_nets.FFNN, Behavior):
         Behavior.__init__(self)
         neural_nets.FFNN.__init__(self, layers, **kwargs)
         self.smartShield = smartShield
-        self.confidence = []
+        #self.confidence = []
 
     def __call__(self, vision: np.ndarray, direction: tuple) -> tuple:
         """
@@ -201,8 +201,11 @@ class AI(neural_nets.FFNN, Behavior):
         tuple: (new global direction, move necessary to have Snake oriented to this direction)
         """
         out = self.feedForward(vision)
-        confidence = 49.892198579 * np.log10(100 * (100*max(out)/out.sum() - 33.33) / (100 - 33.33) + 1)
-        self.confidence.append(confidence)
+        #confidence = 49.892198579 * np.log10(100 * (100*max(out)/out.sum() - 33.33) / (100 - 33.33) + 1)
+        #self.confidence.append(confidence)
+		
+		# MAKE SURE IF USING CONFIDENCE TO CLEAR IN SNAKE RESET!!!
+        
         decision = np.argmax(out)
         newDirection = {0: Behavior.rotateCCW(direction), 1: direction, 2: Behavior.rotateCW(direction)}[decision]
         move = {0: "left", 1: "straight", 2: "right"}[decision] 
