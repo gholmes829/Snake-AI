@@ -7,9 +7,12 @@ playGame
     Allows game to be played, calls appropriate sub function.
 playTrainingGame
     Plays game with settings.mapSize sized map.
+playPlayerGame
+    Plays game with settings.mapSize sized map meant for player control.
 """
 
 import numpy as np
+import keyboard
 
 from core import settings, environments, snakes, graphics, behaviors
 from core.graphics import Engine
@@ -35,7 +38,7 @@ def playGame(environment: environments.Environment, render: bool = True) -> None
         _simulateGame(environment)
 
 
-def playTrainingGame(snake: snakes.Snake, render: bool = False) -> None:
+def playTrainingGame(snake: snakes.Snake, render: bool = False) -> dict:
     """
     Plays game with settings.mapSize sized map.
 
@@ -49,9 +52,24 @@ def playTrainingGame(snake: snakes.Snake, render: bool = False) -> None:
     environment = environments.Environment(snake, settings.mapSize)
     playGame(environment, render=render)
     return {"fitness": snakes.Snake.fitness(snake),  "score": snake.score}
+	
+	
+def playPlayerGame(snake: snakes.Snake, spaceStart: bool = True) -> None:
+    """
+    Plays game with settings.mapSize sized map meant for player control.
+
+    Parameters
+    ----------
+    snake: snakes.Snake
+        Snake to play game with
+    spaceStart: bool, default=True
+        Indicates if game should be started with space or start automatically
+    """
+    environment = environments.Environment(snake, settings.mapSize)
+    _renderedGame(environment, spaceStart=spaceStart)
 
 
-def _simulateGame(environment: environments.Environment):
+def _simulateGame(environment: environments.Environment) -> None:
     """
     Plays simulated game without GUI window
 
@@ -64,7 +82,7 @@ def _simulateGame(environment: environments.Environment):
         environment.step()
 
 
-def _renderedGame(environment: environments.Environment):
+def _renderedGame(environment: environments.Environment, spaceStart: bool = False) -> None:
     """
     Plays game rendered to GUI window.
 
@@ -80,6 +98,12 @@ def _renderedGame(environment: environments.Environment):
     }
     engine = Engine(settings.screenSize, environment.gameMap.size, checkered=True, **params)
 
+    if spaceStart:
+        while not keyboard.is_pressed("space"):
+            engine.clearScreen()
+            engine.renderScene(_renderEnvironment, environment, 1)
+            engine.updateScreen()
+	
     while environment.active():
         environment.step()
         if environment.active():

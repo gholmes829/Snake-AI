@@ -80,6 +80,7 @@ class Driver:
         """Opens GUI window and lets user play Snake with keyboard controls."""
         snake = snakes.Player(**settings.snakeParams)
         self.environment = environments.Environment(snake, settings.mapSize)
+        print("\nGet ready...")
         game.playGame(self.environment)
         print()
         self._checkSave()
@@ -169,12 +170,13 @@ class Driver:
 
         # initialize training parameters
         population, generations = settings.populationSize, settings.generations
-		
+
         seedFiles = os.listdir(self.seedPath)
         numSeeds = len(seedFiles)
-
-        # add combinatorics for crossover
-        if numSeeds > 0 and Driver.getValidInput("Select population seed:\n\t1) Random\n\t2) Starter models in ...trained/seeds, n=" + str(numSeeds), dtype=int, valid=range(1, 3)) - 1:
+        numSeeds = 0
+        print()
+        choice = Driver.getValidInput("Select population seed:\n\t1) Random\n\t2) Starter seeds\n\t3) Back", dtype=int, valid=range(1, 4))
+        if choice == 2 and numSeeds > 0:
             initialPopulation = []
             for modelFile in seedFiles[:-1]:
                 data = np.load(os.path.join(self.modelPath, modelFile), allow_pickle=True)
@@ -191,7 +193,11 @@ class Driver:
                 }
             clone = snakes.SmartSnake(layers=settings.networkArchitecture, **settings.snakeParams, model=model)
             initialPopulation += [clone for _ in range(population-len(initialPopulation)-1)] + [clone] 
-			
+        elif choice == 2 and numSeeds == 0:
+            print("\nNo starter seeds in .../trained/seeds/")
+            return
+        elif choice == 3:
+            return
         else:
             initialPopulation = [snakes.SmartSnake(layers=settings.networkArchitecture, **settings.snakeParams) for _ in range(population)]
 		
