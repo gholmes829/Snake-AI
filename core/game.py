@@ -158,14 +158,14 @@ def _renderEnvironment(engine: graphics.Engine, environment: environments.Enviro
 
     # render Snake's body
     for i, coord in enumerate(prev):
-        engine.renderRect(engine.scaleUp(coord + (curr[i] - coord) * stepPercent), engine.paddedGridSize, snakeColor)
+        engine.renderRect(engine.scaleUp(coord + stepPercent * (curr[i] - coord)), engine.paddedGridSize, snakeColor)
         if i > 1 and np.all(abs(coord - prev[i - 2]) == (1, 1)):
             engine.renderRect(engine.scaleUp(prev[i - 1]), engine.paddedGridSize, snakeColor)
         elif i == 1 and np.all(abs(curr[0] - prev[1]) == (1, 1)):
             engine.renderRect(engine.scaleUp(prev[0]), engine.paddedGridSize, snakeColor)
 
     # extra circle on head
-    engine.renderCircle(engine.scaleUp(prev + (curr[0] - prev) * stepPercent), int(engine.gridSize[0] / 2), headColor)
+    engine.renderCircle(engine.scaleUp(prev[0] + stepPercent * (curr[0] - prev[0])), int(engine.gridSize[0] / 2), headColor)
 
     # if Snake just grew, render additional segment
     if len(prev) != len(curr):
@@ -218,8 +218,8 @@ def _renderInitial(engine: graphics.Engine, environment: environments.Environmen
     engine.printToScreen("Score: " + str(environment.snake.score), engine.scaleUp(txtPos), 30, Engine.colors["blue"])
 	
     # render start prompt
-    txtPos = (environment.gameMap.size[0] * 0.3, environment.gameMap.size[1] * 0.8)
-    engine.printToScreen("Press space or movement keys...", engine.scaleUp(txtPos), 45, Engine.colors["blue"])
+    txtPos = (environment.gameMap.size[0] * 0.45, environment.gameMap.size[1] * 0.9)
+    engine.printToScreen("Press space or movement keys...", engine.scaleUp(txtPos), 30, Engine.colors["blue"])
 	
     # render hunger
     if environment.snake.starvation:
