@@ -81,7 +81,7 @@ class Driver:
         snake = snakes.Player(**settings.snakeParams)
         self.environment = environments.Environment(snake, settings.mapSize)
         print("\nGet ready...")
-        game.playGame(self.environment)
+        game.playPlayerGame(self.environment)
         print()
         self._checkSave()
 		
