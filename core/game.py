@@ -210,7 +210,10 @@ def _renderInitial(engine: graphics.Engine, environment: environments.Environmen
         engine.renderRect(engine.scaleUp(coord), engine.paddedGridSize, snakeColor)
 
     # extra circle on head
-    engine.renderCircle(engine.scaleUp(curr[0]), int(engine.gridSize[0] / 2), headColor)
+    headScale = 0.67
+    headCoefficient = 0.5 * headScale
+    headOffset = 0.5 - headCoefficient
+    engine.renderCircle(engine.scaleUp(curr[0] + headOffset), int(headCoefficient * engine.gridSize[0]), headColor)
 
     # render food
     for coord in environment.gameMap.filter(1):
