@@ -98,7 +98,8 @@ def _renderedGame(environment: environments.Environment, spaceStart: bool = Fals
     engine = Engine(settings.screenSize, environment.gameMap.size, checkered=True, **params)
 
     if spaceStart:
-        while not keyboard.is_pressed("space"):
+        print("Press space or movement keys to start...")
+        while not any([keyboard.is_pressed(key) for key in ("space", "w", "a", "s","d", "up", "right", "down", "left")]) and engine.shouldRun():
             engine.clearScreen()
             engine.renderScene(_renderInitial, environment)
             engine.updateScreen()
@@ -180,8 +181,9 @@ def _renderEnvironment(engine: graphics.Engine, environment: environments.Enviro
     engine.printToScreen("Score: " + str(environment.snake.score), engine.scaleUp(txtPos), 30, Engine.colors["blue"])
 	
     # render hunger
-    txtPos = (environment.gameMap.size[0] * 0.8, environment.gameMap.size[1] * 0.125)
-    engine.printToScreen("Hunger: " + str(min(int(abs(round(100 * environment.snake.hunger / environment.snake.maxHunger, 0))), 100)) + "%", engine.scaleUp(txtPos), 30, Engine.colors["blue"])
+    if environment.snake.starvation:
+        txtPos = (environment.gameMap.size[0] * 0.8, environment.gameMap.size[1] * 0.125)
+        engine.printToScreen("Hunger: " + str(min(int(abs(round(100 * environment.snake.hunger / environment.snake.maxHunger, 0))), 100)) + "%", engine.scaleUp(txtPos), 30, Engine.colors["blue"])
 	
 
 def _renderInitial(engine: graphics.Engine, environment: environments.Environment) -> None:
@@ -217,5 +219,6 @@ def _renderInitial(engine: graphics.Engine, environment: environments.Environmen
     engine.printToScreen("Score: " + str(environment.snake.score), engine.scaleUp(txtPos), 30, Engine.colors["blue"])
 	
     # render hunger
-    txtPos = (environment.gameMap.size[0] * 0.8, environment.gameMap.size[1] * 0.125)
-    engine.printToScreen("Hunger: " + str(min(int(abs(round(100 * environment.snake.hunger / environment.snake.maxHunger, 0))), 100)) + "%", engine.scaleUp(txtPos), 30, Engine.colors["blue"])
+    if environment.snake.starvation:
+        txtPos = (environment.gameMap.size[0] * 0.8, environment.gameMap.size[1] * 0.125)
+        engine.printToScreen("Hunger: " + str(min(int(abs(round(100 * environment.snake.hunger / environment.snake.maxHunger, 0))), 100)) + "%", engine.scaleUp(txtPos), 30, Engine.colors["blue"])
