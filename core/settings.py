@@ -22,17 +22,18 @@ order = 3
 
 areaParam = area**order
 perimeter = 2 * (mapSize[0] + mapSize[1])
-a = 10 * ((area-perimeter)/areaParam)
-b = perimeter + 10
+coefficient, offset = 10, 50
+a = coefficient * ((area-perimeter)/areaParam)
+b = perimeter + offset
 
 gridColors = ("lightBlue", "mediumBlue", "mediumBlue")  # color of GUI window background
 
 # FPS AND DISPLAY
 targetFPS = 60
-smoothness = 3  # controls how fast and smooth animations run
+smoothness = 5  # controls how fast and smooth animations run
 
 # GENETICS
-populationSize = 500
+populationSize = 1000
 generations = 1000
 displayTraining = False  # displays best snake after each generation during training
 
@@ -52,7 +53,14 @@ def calcRefeed(size):
     return calcHunger(size)
 
 smartShield = True  # allow behavior to overwrite AI neural network decisions
-snakeParams = {"initialSize": initialSnakeSize, "vision": snakeVision, "maxHunger": calcMaxHunger, "refeed": calcRefeed}
+
+snakeParams = {
+        "initialSize": initialSnakeSize,
+        "vision": snakeVision,
+        "maxHunger": calcMaxHunger,
+        "refeed": calcRefeed,
+    }
+	
 networkArchitecture = (24, 16, 3)  # FFNN layers
 
 # HELPER

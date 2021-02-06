@@ -107,6 +107,8 @@ def _renderEnvironment(engine: graphics.Engine, environment: environments.Enviro
     stepPercent = step / settings.smoothness
     prev, curr = np.array(environment.prevSnakeBody), np.array(environment.snake.body)  # Snake's body
     snakeColor = environment.snake.color
+    headColor = tuple([min(255-value, 254) for value in snakeColor])  # min because cant render completely white circle for some reason
+    #print(headColor)
 
     origin = environment.snake.head
     motion = environment.snake.direction
@@ -138,6 +140,9 @@ def _renderEnvironment(engine: graphics.Engine, environment: environments.Enviro
         elif i == 1 and np.all(abs(curr[0] - prev[1]) == (1, 1)):
             engine.renderRect(engine.scaleUp(prev[0]), engine.paddedGridSize, snakeColor)
 
+    # extra circle on head
+    engine.renderCircle(engine.scaleUp(prev + (curr[0] - prev) * stepPercent), int(engine.gridSize[0] / 2), headColor)
+
     # if Snake just grew, render additional segment
     if len(prev) != len(curr):
         engine.renderRect(engine.scaleUp(curr[-1]), engine.paddedGridSize, snakeColor)
@@ -149,3 +154,7 @@ def _renderEnvironment(engine: graphics.Engine, environment: environments.Enviro
     # render score
     txtPos = (environment.gameMap.size[0] * 0.8, environment.gameMap.size[1] * 0.075)
     engine.printToScreen("Score: " + str(environment.snake.score), engine.scaleUp(txtPos), 30, Engine.colors["blue"])
+	
+    # render hunger
+    txtPos = (environment.gameMap.size[0] * 0.8, environment.gameMap.size[1] * 0.125)
+    engine.printToScreen("Hunger: " + str(int(abs(round(100 * environment.snake.hunger / environment.snake.maxHunger, 0)))) + "%", engine.scaleUp(txtPos), 30, Engine.colors["blue"])

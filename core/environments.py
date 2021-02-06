@@ -139,7 +139,7 @@ class Environment:
             "origin": self.origin,
             "food": self.foodLog[::-1],
             "mapSize": self.gameMap.size,
-            "color": self.snake.color
+            "color": tuple(self.snake.color)
         }
 
     def display(self) -> None:

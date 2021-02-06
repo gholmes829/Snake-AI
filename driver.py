@@ -87,6 +87,7 @@ class Driver:
     def _playAI(self) -> None:
         """User selects saved model from .../dna/trained. Opens GUI window and AI plays game."""
         trainedFiles = os.listdir(self.modelPath)
+        trainedFiles.remove("seeds")
         numTrained = len(trainedFiles)
         if numTrained == 0:
             print("No trained AI!\n")
@@ -107,7 +108,7 @@ class Driver:
             dataParams = {
                 "model": model,
                 "layers": settings.networkArchitecture,
-                "color": tuple(data["color"]),
+                "color": tuple([int(value) for value in data["color"]]),
                 "smartShield": settings.smartShield
             }
 
@@ -182,14 +183,14 @@ class Driver:
                     "biases": [np.asarray(layer, dtype=float) for layer in data["biases"]]
                     }
                 clone = snakes.SmartSnake(layers=settings.networkArchitecture, **settings.snakeParams, model=model)
-                initialPopulation += [genetics.Genetics._mutate(clone) for _ in range(int(population/numSeeds)-1)] + [clone]
+                initialPopulation += [clone for _ in range(int(population/numSeeds)-1)] + [clone]
             data = np.load(os.path.join(self.modelPath, seedFiles[-1]), allow_pickle=True)
             model = {
                 "weights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
                 "biases": [np.asarray(layer, dtype=float) for layer in data["biases"]]
                 }
             clone = snakes.SmartSnake(layers=settings.networkArchitecture, **settings.snakeParams, model=model)
-            initialPopulation += [genetics.Genetics._mutate(clone) for _ in range(population-len(initialPopulation)-1)] + [clone] 
+            initialPopulation += [clone for _ in range(population-len(initialPopulation)-1)] + [clone] 
 			
         else:
             initialPopulation = [snakes.SmartSnake(layers=settings.networkArchitecture, **settings.snakeParams) for _ in range(population)]

@@ -402,8 +402,7 @@ class Genetics:
 		
         return superMutants
 
-    @staticmethod
-    def _mutate(member: object) -> object:
+    def _mutate(self, member: object) -> object:
         """
         Provides mutated clone of member.
 

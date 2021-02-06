@@ -186,7 +186,7 @@ class Snake:
         self.prevTail = (2 * self.prevTail[0] - self.body[-2][0], 2 * self.prevTail[1] - self.body[-2][1])
         self.maxHunger = self.maxHungerFunc(len(self))
         self.refeed = self.refeedFunc(len(self))
-        self.hunger = (self.hunger - self.refeed) * ((self.hunger - self.refeed) >= 0)
+        self.hunger = (self.hunger - self.refeed) * ((self.hunger - self.refeed) > 0)
 
     def translate(self, origin: tuple) -> None:
         """
