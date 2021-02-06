@@ -157,4 +157,4 @@ def _renderEnvironment(engine: graphics.Engine, environment: environments.Enviro
 	
     # render hunger
     txtPos = (environment.gameMap.size[0] * 0.8, environment.gameMap.size[1] * 0.125)
-    engine.printToScreen("Hunger: " + str(int(abs(round(100 * environment.snake.hunger / environment.snake.maxHunger, 0)))) + "%", engine.scaleUp(txtPos), 30, Engine.colors["blue"])
+    engine.printToScreen("Hunger: " + str(int(abs(round(100 * environment.snake.hunger / environment.snake.maxHunger, 0)), 100)) + "%", engine.scaleUp(txtPos), 30, Engine.colors["blue"])

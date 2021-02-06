@@ -149,7 +149,7 @@ class Snake:
         self.body.insert(0, (self.body[0][0] + self.direction[0], self.body[0][1] + self.direction[1]))
         self.head = self.body[0]
 
-        if self.head in self.body[1:] or (self.starvation and self.hunger > self.maxHunger):
+        if self.head in self.body[1:] or (self.starvation and self.hunger >= self.maxHunger):
             self.kill()
         else:
             self.hunger += 1
