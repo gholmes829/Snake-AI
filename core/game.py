@@ -100,7 +100,7 @@ def _renderedGame(environment: environments.Environment, spaceStart: bool = Fals
     if spaceStart:
         while not keyboard.is_pressed("space"):
             engine.clearScreen()
-            engine.renderScene(_renderEnvironment, environment, 1)
+            engine.renderScene(_renderInitial, environment)
             engine.updateScreen()
 	
     while environment.active():
@@ -113,6 +113,8 @@ def _renderedGame(environment: environments.Environment, spaceStart: bool = Fals
                     engine.updateScreen()
     engine.exit()
 
+
+# DEFINES HOW TO RENDER GAMES, WILL PASS TO ENGINE	
 
 def _renderEnvironment(engine: graphics.Engine, environment: environments.Environment, step: int) -> None:
     """
@@ -130,8 +132,7 @@ def _renderEnvironment(engine: graphics.Engine, environment: environments.Enviro
     stepPercent = step / settings.smoothness
     prev, curr = np.array(environment.prevSnakeBody), np.array(environment.snake.body)  # Snake's body
     snakeColor = environment.snake.color
-    headColor = tuple([min(255-value, 254) for value in snakeColor])  # min because cant render completely white circle for some reason
-    #print(headColor)
+    headColor = tuple([min(255-value, 254) for value in snakeColor])  # min because can't render completely white circle for some reason
 
     origin = environment.snake.head
     motion = environment.snake.direction
@@ -169,6 +170,43 @@ def _renderEnvironment(engine: graphics.Engine, environment: environments.Enviro
     # if Snake just grew, render additional segment
     if len(prev) != len(curr):
         engine.renderRect(engine.scaleUp(curr[-1]), engine.paddedGridSize, snakeColor)
+
+    # render food
+    for coord in environment.gameMap.filter(1):
+        engine.renderCircle(engine.scaleUp(coord), int(engine.gridSize[0] / 2), Engine.colors["red"])
+
+    # render score
+    txtPos = (environment.gameMap.size[0] * 0.8, environment.gameMap.size[1] * 0.075)
+    engine.printToScreen("Score: " + str(environment.snake.score), engine.scaleUp(txtPos), 30, Engine.colors["blue"])
+	
+    # render hunger
+    txtPos = (environment.gameMap.size[0] * 0.8, environment.gameMap.size[1] * 0.125)
+    engine.printToScreen("Hunger: " + str(min(int(abs(round(100 * environment.snake.hunger / environment.snake.maxHunger, 0))), 100)) + "%", engine.scaleUp(txtPos), 30, Engine.colors["blue"])
+	
+
+def _renderInitial(engine: graphics.Engine, environment: environments.Environment) -> None:
+    """
+    Defines how a Snake game environment is initially rendered to GUI window before game starts. Made to be passed into renderScene method of Engine.
+
+    Parameters
+    ----------
+    engine: graphics.Engine
+        Generic engine later converted to self when passed in to renderScene
+    environment: environments.Environment
+        Environment for game
+    """
+    curr = np.array(environment.snake.body)  # Snake's body
+    snakeColor = environment.snake.color
+    headColor = tuple([min(255-value, 254) for value in snakeColor])  # min because can't render completely white circle for some reason
+
+    origin = environment.snake.head
+
+    # render Snake's body
+    for coord in curr:
+        engine.renderRect(engine.scaleUp(coord), engine.paddedGridSize, snakeColor)
+
+    # extra circle on head
+    engine.renderCircle(engine.scaleUp(curr[0]), int(engine.gridSize[0] / 2), headColor)
 
     # render food
     for coord in environment.gameMap.filter(1):
