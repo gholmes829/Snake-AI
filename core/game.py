@@ -54,7 +54,7 @@ def playTrainingGame(snake: snakes.Snake, render: bool = False) -> dict:
     return {"fitness": snakes.Snake.fitness(snake),  "score": snake.score}
 	
 	
-def playPlayerGame(snake: snakes.Snake, spaceStart: bool = True) -> None:
+def playPlayerGame(environment: environments.Environment, spaceStart: bool = True) -> None:
     """
     Plays game with settings.mapSize sized map meant for player control.
 
@@ -65,7 +65,6 @@ def playPlayerGame(snake: snakes.Snake, spaceStart: bool = True) -> None:
     spaceStart: bool, default=True
         Indicates if game should be started with space or start automatically
     """
-    environment = environments.Environment(snake, settings.mapSize)
     _renderedGame(environment, spaceStart=spaceStart)
 
 
