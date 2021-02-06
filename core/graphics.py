@@ -117,7 +117,7 @@ class Engine:
         self.fontCache = {}
         self.surfaceCache = {}
 
-        # aspect rations
+        # aspect ratios
         screenAR, gridsAR = screenSize[0]/screenSize[1], numGrids[0]/numGrids[1]
 
         # position active window to fit on screen
