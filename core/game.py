@@ -165,7 +165,10 @@ def _renderEnvironment(engine: graphics.Engine, environment: environments.Enviro
             engine.renderRect(engine.scaleUp(prev[0]), engine.paddedGridSize, snakeColor)
 
     # extra circle on head
-    engine.renderCircle(engine.scaleUp(prev[0] + stepPercent * (curr[0] - prev[0])), int(engine.gridSize[0] / 2), headColor)
+    headScale = 0.67
+    headCoefficient = 0.5 * headScale
+    headOffset = 0.5 - headCoefficient
+    engine.renderCircle(engine.scaleUp(prev[0] + stepPercent * (curr[0] - prev[0]) + headOffset), int(headCoefficient * engine.gridSize[0]), headColor)
 
     # if Snake just grew, render additional segment
     if len(prev) != len(curr):
