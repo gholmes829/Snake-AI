@@ -115,7 +115,7 @@ class Driver:
 
             snake = snakes.SmartSnake(**settings.snakeParams, **dataParams)
             self.environment = environments.Environment(snake, settings.mapSize)
-            game.playGame(self.environment, render=True)
+            game.playGame(self.environment, render=False)
             self._checkSave()
 
     def _checkSave(self) -> None:

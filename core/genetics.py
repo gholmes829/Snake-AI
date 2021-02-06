@@ -229,7 +229,7 @@ class Genetics:
 
         return members
 
-    def _makePopulation(self, population: list, parallelize: bool = True) -> list:
+    def _makePopulation(self, population: list, parallelize: bool = False) -> list:
         """
         Uses multi-core parallel processing to generate population for generation.
 

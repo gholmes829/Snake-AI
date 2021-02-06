@@ -30,11 +30,11 @@ gridColors = ("lightBlue", "mediumBlue", "mediumBlue")  # color of GUI window ba
 
 # FPS AND DISPLAY
 targetFPS = 60
-smoothness = 5  # controls how fast and smooth animations run
+smoothness = 3  # controls how fast and smooth animations run
 
 # GENETICS
-populationSize = 1000
-generations = 1000
+populationSize = 250
+generations = 2500
 displayTraining = False  # displays best snake after each generation during training
 
 # SNAKE
