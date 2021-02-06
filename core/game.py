@@ -98,7 +98,6 @@ def _renderedGame(environment: environments.Environment, spaceStart: bool = Fals
     engine = Engine(settings.screenSize, environment.gameMap.size, checkered=True, **params)
 
     if spaceStart:
-        print("Press space or movement keys to start...")
         while not any([keyboard.is_pressed(key) for key in ("space", "w", "a", "s","d", "up", "right", "down", "left")]) and engine.shouldRun():
             engine.clearScreen()
             engine.renderScene(_renderInitial, environment)
@@ -217,6 +216,10 @@ def _renderInitial(engine: graphics.Engine, environment: environments.Environmen
     # render score
     txtPos = (environment.gameMap.size[0] * 0.8, environment.gameMap.size[1] * 0.075)
     engine.printToScreen("Score: " + str(environment.snake.score), engine.scaleUp(txtPos), 30, Engine.colors["blue"])
+	
+    # render start prompt
+    txtPos = (environment.gameMap.size[0] * 0.3, environment.gameMap.size[1] * 0.8)
+    engine.printToScreen("Press space or movement keys...", engine.scaleUp(txtPos), 45, Engine.colors["blue"])
 	
     # render hunger
     if environment.snake.starvation:
