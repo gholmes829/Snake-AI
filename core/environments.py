@@ -91,11 +91,12 @@ class Environment:
 
         self._placeSnake()
         self._placeFood()
+        self.snake.getSensoryInputs(self.gameMap)
 
     def step(self) -> None:
         """Takes a time step in game, calculating next state and updating game objects."""
         self.prevSnakeBody = self.snake.body.copy()
-        self.snake.move(self.gameMap)
+        self.snake.move()
         self.moveLog.append(self.snake.direction)
 
         valueAtHead = self.gameMap[self.snake.head]
@@ -110,6 +111,7 @@ class Environment:
                 self._placeFood()
             else:  # Snake moved into open space
                 self.gameMap[self.snake.prevTail] = EMPTY
+            self.snake.getSensoryInputs(self.gameMap)
 
     def active(self) -> bool:
         """

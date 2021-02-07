@@ -138,9 +138,6 @@ def _renderEnvironment(engine: graphics.Engine, environment: environments.Enviro
     motion = environment.snake.direction
 
     # render Snake's rays if Snake casts rays
-    print([coord[0] for coord in environment.snake.visionBounds])
-    print([coord[1] for coord in environment.snake.visionBounds])
-    print()
     for pair in environment.snake.visionBounds:
 
         unit = tuple([-1 if p < 0 else 1 if p > 0 else 0 for p in (pair[1][0] - origin[0], pair[1][1] - origin[1])])

@@ -133,7 +133,7 @@ class _SnakeBase:
 
         self.moveCount = {"left": 0, "straight": 0, "right": 0}  # number of times Snake has moved in each direction
 
-    def move(self, environment: dict) -> None:
+    def move(self) -> None:
         """
         Snake picks a direction to move and moves one step that direction.
 
@@ -143,7 +143,7 @@ class _SnakeBase:
             24x1 list of floats, 0-7 closeness to food, 8-15 closeness to body, 16-23 closeness to wall
         """
         self.prevTail = self.body[-1]
-        self.direction, move = self.behavior(*self.getState(environment))
+        self.direction, move = self.behavior(*self.getState())
         self.moveCount[move] += 1
 
         self.body.pop()
@@ -163,6 +163,9 @@ class _SnakeBase:
     def kill(self) -> None:
         """Kills snake."""
         self.dead = True
+     
+    def updateVision(self, environment) -> None:
+        self.vision = self._castRays(environment)
 
     def grow(self) -> None:
         """Increases body size by one, grows segment where tail used to be."""
@@ -352,7 +355,8 @@ class AI(_SnakeBase):
 	
     _behaviorMethods = {
         "neural net": {
-            "getState": lambda self, environment: [self._castRays(environment), self.direction],
+            "getState": lambda self: [self.vision, self.direction],
+            "getSensoryInputs": lambda self, environment: self.updateVision(environment),
             "getBrain": lambda self: self.behavior.getNetwork
         },
     }
