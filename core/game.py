@@ -137,24 +137,26 @@ def _renderEnvironment(engine: graphics.Engine, environment: environments.Enviro
     origin = environment.snake.head
     motion = environment.snake.direction
 
-    # render Snake's rays if Snake is controlled by AI
-    if type(environment.snake.behavior) == behaviors.AI:
-        for pair in environment.rays:
+    # render Snake's rays if Snake casts rays
+    print([coord[0] for coord in environment.snake.visionBounds])
+    print([coord[1] for coord in environment.snake.visionBounds])
+    print()
+    for pair in environment.snake.visionBounds:
 
-            unit = tuple([-1 if p < 0 else 1 if p > 0 else 0 for p in (pair[1][0] - origin[0], pair[1][1] - origin[1])])
-            end = origin
+        unit = tuple([-1 if p < 0 else 1 if p > 0 else 0 for p in (pair[1][0] - origin[0], pair[1][1] - origin[1])])
+        end = origin
 
-            for step in range(settings.snakeVision):
-                nextStep = (end[0] + unit[0], end[1] + unit[1])
+        for step in range(settings.snakeVision):
+            nextStep = (end[0] + unit[0], end[1] + unit[1])
 
-                if -1 <= nextStep[0] <= environment.gameMap.size[0] and -1 <= nextStep[1] <= environment.gameMap.size[1]:
-                    end = nextStep
+            if -1 <= nextStep[0] <= environment.gameMap.size[0] and -1 <= nextStep[1] <= environment.gameMap.size[1]:
+                end = nextStep
 
-            dx, dy = motion[0] * (stepPercent - 0.5) + 0.5, motion[1] * (stepPercent - 0.5) + 0.5
-            start = engine.scaleUp((origin[0] + dx, origin[1] + dy))
-            end = engine.scaleUp((end[0] + dx, end[1] + dy))
+        dx, dy = motion[0] * (stepPercent - 0.5) + 0.5, motion[1] * (stepPercent - 0.5) + 0.5
+        start = engine.scaleUp((origin[0] + dx, origin[1] + dy))
+        end = engine.scaleUp((end[0] + dx, end[1] + dy))
 
-            engine.renderLine(start, end, 2, Engine.colors["red"])
+        engine.renderLine(start, end, 2, Engine.colors["red"])
 
     # render Snake's body
     for i, coord in enumerate(prev):

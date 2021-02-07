@@ -18,10 +18,6 @@ class FFNN:
     """
     Feed forward neural network without backpropogation.
 
-    Attributes
-    ----------
-    a
-
     Public Methods
     --------------
     feedForward(inputs) -> np.ndarray:

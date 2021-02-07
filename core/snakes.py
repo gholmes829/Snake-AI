@@ -15,6 +15,8 @@ Ghost
 
 from random import choice
 from numba import jit
+import weakref
+import numpy as np
 
 from core.constants import *
 from core import behaviors
@@ -141,7 +143,6 @@ class _SnakeBase:
             24x1 list of floats, 0-7 closeness to food, 8-15 closeness to body, 16-23 closeness to wall
         """
         self.prevTail = self.body[-1]
-        self.state = self.getState(environment)
         self.direction, move = self.behavior(*self.getState(environment))
         self.moveCount[move] += 1
 
@@ -218,7 +219,6 @@ class _SnakeBase:
             rays[direction] = {"wall": 1 / distance * int(distance <= self.maxVision), "food": 0, "body": 0}
 
         self.visionBounds.clear()  # reset so rays contains info only of this instance
-		
         probe = None
         for ray, targets in rays.items():  # ...in each 8 octilinear directions
             bound = min(limits[ray], self.maxVision)
@@ -226,18 +226,18 @@ class _SnakeBase:
             while not targets["food"] and not targets["body"] and step <= bound:  # take specified number of steps away from Snake's head and don't let rays search outside of map borders
                 probe = (origin[0] + ray[0] * step, origin[1] + ray[1] * step)  # update probe position
                 if not targets["food"] and surroundings[probe] == FOOD:  # if food not found yet and found food
-                    targets["food"] = 1 / Snake.dist(origin, probe)
+                    targets["food"] = 1 / _SnakeBase.dist(origin, probe)
                 elif not targets["body"] and surroundings[probe] == DANGER:  # if body not found yet and found body
-                    targets["body"] = 1 / Snake.dist(origin, probe)
+                    targets["body"] = 1 / _SnakeBase.dist(origin, probe)
                 step += 1	
             self.visionBounds.append((origin, (origin[0] + ray[0] * bound, origin[1] + ray[1] * bound)))  # add end of ray to list
-		
+
         data = np.zeros(24)
 
         for i, direction in enumerate(DIRECTIONS):  # for each direction
             for j, item in ((0, "food"), (8, "body"), (16, "wall")):
                 # need to change reference so 'global up' will be 'Snake's left' is Snake if facing 'global right'
-                data[i + j] = rays[Snake.getLocalDirection(snakeDirection, direction)][item]  # add data
+                data[i + j] = rays[_SnakeBase.getLocalDirection(snakeDirection, direction)][item]  # add data
 
         # PRINT VALUES OF DATA TO DEBUG
         #for i in range(3):
@@ -245,7 +245,7 @@ class _SnakeBase:
         #        print(round(data[i * 8 + j], 3), end=" ")
         #    print()
         #self.display()
-        return data, rays
+        return data
 
     @staticmethod
     def getLocalDirection(basis: tuple, direction: tuple) -> tuple:
@@ -331,22 +331,33 @@ class Ghost(_SnakeBase):
 		
     def getState(self, environment):
         return [self.direction]
-		
+
+class BoundMethod:
+    def __init__(self, instance, func):
+        self.func = func
+        self.instance_ref = weakref.ref(instance)
+
+        self.__wrapped__ = func
+
+    def __call__(self, *args, **kwargs):
+        instance = self.instance_ref()
+        return self.func(instance, *args, **kwargs)
+
+
 class AI(_SnakeBase):
     """Snake predetermined with neural net as behavior."""
-	# model: dict = None, layers: tuple = (24, 16, 3), smartShield: bool = False,
     _behaviors = {
-        "neural": lambda args, kwargs: behaviors.NeuralNetwork(*args, **kwargs),
+        "neural net": lambda args, kwargs: behaviors.NeuralNetwork(*args, **kwargs),
     }
 	
     _behaviorMethods = {
-        "neural": {
+        "neural net": {
             "getState": lambda self, environment: [self._castRays(environment), self.direction],
             "getBrain": lambda self: self.behavior.getNetwork
         },
     }
 
-    def __init__(self, behavior, behaviorArgs: list, behaviorKwargs: dict, **kwargs: dict) -> None:
+    def __init__(self, behaviorType, behaviorArgs: list = None, behaviorKwargs: dict = None, **kwargs: dict) -> None:
         """
         Initializes with loaded model or creates random model
 
@@ -362,13 +373,15 @@ class AI(_SnakeBase):
         **kwargs:
             Parameters for base class
         """
-        #self.model = model
-        #self.layers = layers
-		
-        behavior = AI._behaviors[behavior](behaviorArgs, behaviorKwargs)
-        for name, method in behaviorAttrs["methods"]:
-            self.__dict__[name] = attr
-        _SnakeBase.__init__(self, behavior, starvation=True, **kwargs)
+        if behaviorArgs is None:
+            behaviorArgs = []
+            
+        if behaviorKwargs is None:
+            behaviorKwargs = {}
+        behavior = AI._behaviors[behaviorType](behaviorArgs, behaviorKwargs)
+        for name, method in AI._behaviorMethods[behaviorType].items():
+            self.__dict__[name] = BoundMethod(self, method)
+        _SnakeBase.__init__(self, behavior, **kwargs)
 		
     def getBrain(self) -> dict:
         """

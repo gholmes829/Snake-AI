@@ -101,21 +101,19 @@ class Driver:
 
             data = np.load(os.path.join(self.modelPath, modelFile), allow_pickle=True)
 
-            model = {
+            behaviorKwargs = {
                 "weights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
-                "biases": [np.asarray(layer, dtype=float) for layer in data["biases"]]
-            }
-
-            dataParams = {
-                "model": model,
+                "biases": [np.asarray(layer, dtype=float) for layer in data["biases"]],
                 "layers": settings.networkArchitecture,
-                "color": tuple([int(value) for value in data["color"]]),
                 "smartShield": settings.smartShield
             }
+            
+            color = tuple([int(value) for value in data["color"]])
+            
 
-            snake = snakes.SmartSnake(**settings.snakeParams, **dataParams)
+            snake = snakes.AI("neural net", behaviorKwargs=behaviorKwargs, **settings.snakeParams, color=color)
             self.environment = environments.Environment(snake, settings.mapSize)
-            game.playGame(self.environment, render=False)
+            game.playGame(self.environment, render=True)
             self._checkSave()
 
     def _checkSave(self) -> None:
@@ -184,14 +182,14 @@ class Driver:
                     "weights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
                     "biases": [np.asarray(layer, dtype=float) for layer in data["biases"]]
                     }
-                clone = snakes.SmartSnake(layers=settings.networkArchitecture, **settings.snakeParams, model=model)
+                clone = snakes.AI(layers=settings.networkArchitecture, **settings.snakeParams, model=model)
                 initialPopulation += [clone for _ in range(int(population/numSeeds)-1)] + [clone]
             data = np.load(os.path.join(self.modelPath, seedFiles[-1]), allow_pickle=True)
             model = {
                 "weights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
                 "biases": [np.asarray(layer, dtype=float) for layer in data["biases"]]
                 }
-            clone = snakes.SmartSnake(layers=settings.networkArchitecture, **settings.snakeParams, model=model)
+            clone = snakes.AI(layers=settings.networkArchitecture, **settings.snakeParams, model=model)
             initialPopulation += [clone for _ in range(population-len(initialPopulation)-1)] + [clone] 
         elif choice == 2 and numSeeds == 0:
             print("\nNo starter seeds in .../trained/seeds/")
@@ -199,7 +197,7 @@ class Driver:
         elif choice == 3:
             return
         else:
-            initialPopulation = [snakes.SmartSnake(layers=settings.networkArchitecture, **settings.snakeParams) for _ in range(population)]
+            initialPopulation = [snakes.AI(layers=settings.networkArchitecture, **settings.snakeParams) for _ in range(population)]
 		
         task = game.playTrainingGame
         colorCross = snakes.Snake.mergeTraits

@@ -125,14 +125,12 @@ class Manual(Behavior):
         """Initializes base class."""
         Behavior.__init__(self)
 
-    def __call__(self, vision: np.ndarray, direction: tuple) -> tuple:
+    def __call__(self, direction: tuple) -> tuple:
         """
         Returns keyboard input, ignores vision.
 
         Parameters
         ----------
-        vision: np.ndarray
-            Describes closeness of Snake's head to food, body, and wall
         direction: tuple
             Current global direction Snake is facing
 
@@ -157,7 +155,7 @@ class Manual(Behavior):
         return newDirection, move
 
 
-class NeuralNet(neural_nets.FFNN, Behavior):
+class NeuralNetwork(neural_nets.FFNN, Behavior):
     """
     Uses neural network to decide direction.
 
