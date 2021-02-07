@@ -5,7 +5,7 @@
             15,
             15
         ],
-        "population": 250,
+        "population": 500,
         "generations": 2500,
         "snake size": 4,
         "snake vision": 15,

@@ -208,7 +208,7 @@ class Snake:
         self.age = 0
         self.awareness = {
             "vision": None,
-            "maxVision": maxVision,
+            "maxVision": self.awareness["maxVision"],
             "visionBounds": None
         }
         self.behavior.reset()

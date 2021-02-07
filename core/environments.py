@@ -93,7 +93,6 @@ class Environment:
         self.prevSnakeBody = self.snake.body.copy()
         self.snake.move()
         self.moveLog.append(self.snake.direction)
-
         entityAtHead = self.gameMap[self.snake.head]
         if entityAtHead == DANGER:  # Snake ran into wall or its body
             self.snake.kill()

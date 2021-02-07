@@ -29,11 +29,11 @@ b = perimeter + offset
 gridColors = ("lightBlue", "mediumBlue", "mediumBlue")  # color of GUI window background
 
 # FPS AND DISPLAY
-targetFPS = 60
-smoothness = 3  # controls how fast and smooth animations run
+targetFPS = 120
+smoothness = 2  # controls how fast and smooth animations run
 
 # GENETICS
-populationSize = 250
+populationSize = 500
 generations = 2500
 displayTraining = False  # displays best snake after each generation during training
 
@@ -41,7 +41,8 @@ displayTraining = False  # displays best snake after each generation during trai
 initialSnakeSize = 4
 maxSnakeVision = max(mapSize)  # how far rays are cast
 
-hungerFunc = lambda size: min(a * (size**order) + b, mapSize[0] * mapSize[1])
+def hungerFunc(size):
+    return min(a * (size**order) + b, mapSize[0] * mapSize[1])
 
 basicSnakeParams = {
     "initialSize": initialSnakeSize,

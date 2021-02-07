@@ -138,7 +138,6 @@ class Genetics:
         #pr.enable()
         self.gen += 1
         population = self._makePopulation(self.population)
-
         self.generation["population"] = self._evaluate(population)
         self.generation["population"].sort(key=lambda member: member["fitness"], reverse=True)
         self.generation["best"] = self.generation["population"][0]

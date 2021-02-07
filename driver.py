@@ -151,26 +151,6 @@ class Driver:
         if settings.populationSize < 10:
             print("\nError: Population size must be at least 10. Change size in settings.py.")
             return
-            
-        # initialize paths and files
-        dnaFiles = os.listdir(self.dnaPath)
-        if len(dnaFiles) > 0:
-            currEvolution = max([int(file[file.index("_")+1:]) for file in dnaFiles if file[:10] == "evolution_"]) + 1
-        else:
-            currEvolution = 1
- 
-        evolutionPath = os.path.join(self.dnaPath, "evolution_" + str(currEvolution))
-        os.mkdir(evolutionPath)
-        data = {
-            "evolution": currEvolution,
-            "settings": settings.getDictInfo(),
-            "fitness": snakes.Snake.fitness.__doc__[9:-9],
-            "architecture": settings.networkArchitecture
-        }
-
-        # write settings for this training session
-        with open(os.path.join(evolutionPath, "settings.json"), "w") as f:
-            json.dump(data, f, indent=4)
 
         # initialize training parameters
         population, generations = settings.populationSize, settings.generations
@@ -181,6 +161,7 @@ class Driver:
         print()
         snakeParams = {
             **settings.basicSnakeParams,
+            "hungerFunc": settings.hungerFunc
         }
         choice = Driver.getValidInput("Select population seed:\n\t1) Random\n\t2) Starter seeds\n\t3) Back", dtype=int, valid=range(1, 4))
         if choice == 2 and numSeeds > 0:
@@ -216,6 +197,27 @@ class Driver:
         snakeDNA = genetics.Genetics(initialPopulation, task, mergeTraits=None)
         trainingTimer = time()
 		
+        # initialize paths and files
+        dnaFiles = os.listdir(self.dnaPath)
+        if len(dnaFiles) > 0:
+            currEvolution = max([int(file[file.index("_")+1:]) for file in dnaFiles if file[:10] == "evolution_"]) + 1
+        else:
+            currEvolution = 1
+ 
+        evolutionPath = os.path.join(self.dnaPath, "evolution_" + str(currEvolution))
+        os.mkdir(evolutionPath)
+        data = {
+            "evolution": currEvolution,
+            "settings": settings.getDictInfo(),
+            "fitness": snakes.Snake.fitness.__doc__[9:-9],
+            "architecture": settings.networkArchitecture
+        }
+
+        # write settings for this training session
+        with open(os.path.join(evolutionPath, "settings.json"), "w") as f:
+            json.dump(data, f, indent=4)
+		
+		
         # train each generation
         print("\nPOPULATION SIZE:", population, "\nGENERATIONS:", generations, "\n")
         for gen in range(1, generations + 1):
@@ -250,10 +252,11 @@ class Driver:
 
             # saves neural net of best snake from generation to .../dna/evolution_x/generation_y/model.npz
             modelPath = os.path.join(generationPath, "model.npz")
+            model = bestSnake.getBrain()
             np.savez(
                 modelPath,
-                weights=np.array(bestSnake.behavior.weights, dtype=object),
-                biases=np.array(bestSnake.behavior.biases, dtype=object),
+                weights=np.array(model["weights"], dtype=object),
+                biases=np.array(model["biases"], dtype=object),
                 color=np.array(bestSnake.color)
             )
             print()
