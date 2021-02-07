@@ -57,7 +57,7 @@ class Environment:
         Displays map and environment in terminal.
     """
 
-    def __init__(self, snake: snakes._SnakeBase, mapSize: tuple, origin: tuple = None, food: list = None) -> None:
+    def __init__(self, snake: snakes.Snake, mapSize: tuple, origin: tuple = None, food: list = None) -> None:
         """
         Initializes environment, places snake and food.
 
@@ -73,25 +73,20 @@ class Environment:
             List of food positions, if not passed in food placed randomly in open space
         """
         self.gameMap = Map(mapSize)
-        self.snake = snake
         self.origin = origin
-
-        if food is None:
-            self.foodQueue = []
-        else:
-            self.foodQueue = food
-
+        
+        self.snake = snake
+        self.prevSnakeBody = None
+        if self.snake.dead:
+            self.snake.reset()
+            
+        self.foodQueue = [] if food is None else food
         self.moveLog = []
         self.foodLog = []
 
-        self.prevSnakeBody = []
-
-        if self.snake.dead:
-            self.snake.revive()
-
         self._placeSnake()
         self._placeFood()
-        self.snake.getSensoryInputs(self.gameMap)
+        self.snake.updateAwareness(self.gameMap)
 
     def step(self) -> None:
         """Takes a time step in game, calculating next state and updating game objects."""
@@ -99,19 +94,19 @@ class Environment:
         self.snake.move()
         self.moveLog.append(self.snake.direction)
 
-        valueAtHead = self.gameMap[self.snake.head]
-        if valueAtHead == DANGER:  # Snake ran into wall or its body
+        entityAtHead = self.gameMap[self.snake.head]
+        if entityAtHead == DANGER:  # Snake ran into wall or its body
             self.snake.kill()
         else:
             self.gameMap[self.snake.head] = DANGER
-            if valueAtHead == FOOD:  # Snake ate food
+            if entityAtHead == FOOD:  # Snake ate food
                 prevTail = self.snake.prevTail
                 self.snake.grow()
                 self.gameMap[prevTail] = DANGER
                 self._placeFood()
             else:  # Snake moved into open space
                 self.gameMap[self.snake.prevTail] = EMPTY
-            self.snake.getSensoryInputs(self.gameMap)
+            self.snake.updateAwareness(self.gameMap)
 
     def active(self) -> bool:
         """

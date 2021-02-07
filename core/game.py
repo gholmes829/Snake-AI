@@ -38,7 +38,7 @@ def playGame(environment: environments.Environment, render: bool = True) -> None
         _simulateGame(environment)
 
 
-def playTrainingGame(snake: snakes._SnakeBase, render: bool = False) -> dict:
+def playTrainingGame(snake: snakes.Snake, render: bool = False) -> dict:
     """
     Plays game with settings.mapSize sized map.
 
@@ -138,12 +138,12 @@ def _renderEnvironment(engine: graphics.Engine, environment: environments.Enviro
     motion = environment.snake.direction
 
     # render Snake's rays if Snake casts rays
-    for pair in environment.snake.visionBounds:
+    for pair in environment.snake.awareness["visionBounds"]:
 
         unit = tuple([-1 if p < 0 else 1 if p > 0 else 0 for p in (pair[1][0] - origin[0], pair[1][1] - origin[1])])
         end = origin
 
-        for step in range(settings.snakeVision):
+        for step in range(settings.maxSnakeVision):
             nextStep = (end[0] + unit[0], end[1] + unit[1])
 
             if -1 <= nextStep[0] <= environment.gameMap.size[0] and -1 <= nextStep[1] <= environment.gameMap.size[1]:
@@ -184,7 +184,7 @@ def _renderEnvironment(engine: graphics.Engine, environment: environments.Enviro
     # render hunger
     if environment.snake.starvation:
         txtPos = (environment.gameMap.size[0] * 0.8, environment.gameMap.size[1] * 0.125)
-        engine.printToScreen("Hunger: " + str(min(int(abs(round(100 * environment.snake.hunger / environment.snake.maxHunger, 0))), 100)) + "%", engine.scaleUp(txtPos), 30, Engine.colors["blue"])
+        engine.printToScreen("Hunger: " + str(min(int(abs(round(100 * environment.snake.hunger / environment.snake.starvation, 0))), 100)) + "%", engine.scaleUp(txtPos), 30, Engine.colors["blue"])
 	
 
 def _renderInitial(engine: graphics.Engine, environment: environments.Environment) -> None:
@@ -229,4 +229,4 @@ def _renderInitial(engine: graphics.Engine, environment: environments.Environmen
     # render hunger
     if environment.snake.starvation:
         txtPos = (environment.gameMap.size[0] * 0.8, environment.gameMap.size[1] * 0.125)
-        engine.printToScreen("Hunger: " + str(min(int(abs(round(100 * environment.snake.hunger / environment.snake.maxHunger, 0))), 100)) + "%", engine.scaleUp(txtPos), 30, Engine.colors["blue"])
+        engine.printToScreen("Hunger: " + str(min(int(abs(round(100 * environment.snake.hunger / environment.snake.starvation, 0))), 100)) + "%", engine.scaleUp(txtPos), 30, Engine.colors["blue"])

@@ -16,7 +16,7 @@ from time import time
 from datetime import datetime
 import psutil
 
-from core import genetics, game, environments, snakes, settings
+from core import genetics, game, environments, snakes, settings, behaviors
 
 __author__ = "Grant Holmes"
 __email__ = "g.holmes429@gmail.com"
@@ -78,7 +78,7 @@ class Driver:
 
     def _playClassic(self) -> None:
         """Opens GUI window and lets user play Snake with keyboard controls."""
-        snake = snakes.Player(**settings.snakeParams)
+        snake = snakes.Snake.Player(**settings.basicSnakeParams)
         self.environment = environments.Environment(snake, settings.mapSize)
         print("\nGet ready...")
         game.playPlayerGame(self.environment)
@@ -100,6 +100,7 @@ class Driver:
             modelFile = trainedFiles[index]
 
             data = np.load(os.path.join(self.modelPath, modelFile), allow_pickle=True)
+            color = tuple([int(value) for value in data["color"]])
 
             behaviorKwargs = {
                 "weights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
@@ -108,10 +109,15 @@ class Driver:
                 "smartShield": settings.smartShield
             }
             
-            color = tuple([int(value) for value in data["color"]])
+            snakeKwargs = {
+                **settings.basicSnakeParams,
+                "hungerFunc": settings.hungerFunc,
+                "color": color
+            }
             
 
-            snake = snakes.AI("neural net", behaviorKwargs=behaviorKwargs, **settings.snakeParams, color=color)
+            
+            snake = snakes.Snake("neural network", behaviorKwargs=behaviorKwargs, **snakeKwargs)
             self.environment = environments.Environment(snake, settings.mapSize)
             game.playGame(self.environment, render=True)
             self._checkSave()
@@ -173,23 +179,29 @@ class Driver:
         numSeeds = len(seedFiles)
         numSeeds = 0
         print()
+        snakeParams = {
+            **settings.basicSnakeParams,
+        }
         choice = Driver.getValidInput("Select population seed:\n\t1) Random\n\t2) Starter seeds\n\t3) Back", dtype=int, valid=range(1, 4))
         if choice == 2 and numSeeds > 0:
             initialPopulation = []
             for modelFile in seedFiles[:-1]:
                 data = np.load(os.path.join(self.modelPath, modelFile), allow_pickle=True)
-                model = {
+                behaviorKwargs = {
+                    "layers": settings.networkArchitecture,
                     "weights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
                     "biases": [np.asarray(layer, dtype=float) for layer in data["biases"]]
-                    }
-                clone = snakes.AI(layers=settings.networkArchitecture, **settings.snakeParams, model=model)
+                }
+
+                clone = snakes.Snake("neural network", behaviorKwargs=behaviorKwargs, **settings.snakeParams)
                 initialPopulation += [clone for _ in range(int(population/numSeeds)-1)] + [clone]
             data = np.load(os.path.join(self.modelPath, seedFiles[-1]), allow_pickle=True)
-            model = {
+            behaviorKwargs = {
+                "layers": settings.networkArchitecture,
                 "weights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
                 "biases": [np.asarray(layer, dtype=float) for layer in data["biases"]]
-                }
-            clone = snakes.AI(layers=settings.networkArchitecture, **settings.snakeParams, model=model)
+            }
+            clone = snakes.Snake("neural network", behaviorKwargs=behaviorKwargs, **settings.snakeParams)
             initialPopulation += [clone for _ in range(population-len(initialPopulation)-1)] + [clone] 
         elif choice == 2 and numSeeds == 0:
             print("\nNo starter seeds in .../trained/seeds/")
@@ -197,7 +209,7 @@ class Driver:
         elif choice == 3:
             return
         else:
-            initialPopulation = [snakes.AI(layers=settings.networkArchitecture, **settings.snakeParams) for _ in range(population)]
+            initialPopulation = [snakes.Snake("neural network", behaviorKwargs={"layers": settings.networkArchitecture}, **snakeParams) for _ in range(population)]
 		
         task = game.playTrainingGame
         colorCross = snakes.Snake.mergeTraits
@@ -300,7 +312,7 @@ class Driver:
         color: tuple
             Color of snake
         """
-        snake = snakes.Ghost(moves, **settings.snakeParams, color=color)
+        snake = snakes.Snake("ghost", behaviorArgs=[moves], **settings.basicSnakeParams, color=color)
         self.environment = environments.Environment(snake, mapSize, origin=origin, food=food)
         game.playGame(self.environment)
         print()

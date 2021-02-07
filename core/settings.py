@@ -39,32 +39,21 @@ displayTraining = False  # displays best snake after each generation during trai
 
 # SNAKE
 initialSnakeSize = 4
-snakeVision = max(mapSize)  # how far rays are cast
+maxSnakeVision = max(mapSize)  # how far rays are cast
 
-def calcHunger(size):
-    return min(a * (size**order) + b, mapSize[0] * mapSize[1])
+hungerFunc = lambda size: min(a * (size**order) + b, mapSize[0] * mapSize[1])
 
-def calcMaxHunger(size):
-    """Calculates how hungry quickly snake can starve based on its size"""
-    return calcHunger(size)
-    
-def calcRefeed(size):
-    """Calculates how much snake's hunger diminishes based on its size"""
-    return calcHunger(size)
-
-starvation = {
-    "active": True,
-    "maxHunger": calcMaxHunger,
-    "refeed": calcRefeed,
+basicSnakeParams = {
+    "initialSize": initialSnakeSize,
+    "maxVision": maxSnakeVision,
 }
+
+#def calcHunger(size):
+#    return min(a * (size**order) + b, mapSize[0] * mapSize[1])
+
+
 	
 smartShield = True  # allow behavior to overwrite AI neural network decisions
-
-snakeParams = {
-        "initialSize": initialSnakeSize,
-        "vision": snakeVision,        
-    }
-	
 networkArchitecture = (24, 16, 3)  # FFNN layers
 
 # HELPER
@@ -79,7 +68,7 @@ def getInfo() -> str:
            "\n    Population: " + str(populationSize) + \
            "\n    Target generations: " + str(generations) + \
            "\n    Starting snake size: " + str(initialSnakeSize) + \
-           "\n    Snake vision: " + str(snakeVision) + \
+           "\n    Snake vision: " + str(maxSnakeVision) + \
            "\n    Smart shield: " + str(smartShield) + \
            "\n    Available CPU cores: " + str(cores)
 
@@ -92,7 +81,7 @@ def getDictInfo() -> dict:
         "population": populationSize,
         "generations": generations,
         "snake size": initialSnakeSize,
-        "snake vision": snakeVision,
+        "snake vision": maxSnakeVision,
         "smart shield": smartShield,
         "CPU cores": cores
     }

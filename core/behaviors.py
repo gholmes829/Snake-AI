@@ -15,6 +15,8 @@ Replay
 
 import keyboard
 import numpy as np
+from copy import deepcopy
+from numba import jit
 
 from core import neural_nets
 from core.constants import *
@@ -22,16 +24,34 @@ from core.constants import *
 __author__ = "Grant Holmes"
 __email__ = "g.holmes429@gmail.com"
 
+# BEHAVIOR FACTORY
+def getBehavior(behaviorType, *args, **kwargs):
+    return {
+        "neural network": NeuralNetwork,
+        "ghost": Replay,
+        "player": Manual,
+    }[behaviorType](*args, **kwargs)
+
 
 class Behavior:
     """Interface class with helper functions."""
     def __init__(self) -> None:
         """Does nothing, expandable"""
-        pass
+        if type(self) == Behavior:
+            raise NotImplementedError
 
-    def __call__(self) -> tuple:
+    def __call__(self, awareness) -> tuple:
         """Does nothing, expandable"""
         raise NotImplementedError
+        
+    def getBrain(self):
+        return {"type": "behavior"}
+        
+    def takeStock(self, head, direction, awareness, surroundings):
+        return
+        
+    def reset(self):
+        return
     
     @staticmethod
     def smartShield(decision: int, newDirection: int, move: str, vision: np.ndarray, direction):
@@ -68,6 +88,108 @@ class Behavior:
 
         return newDirection, move
 
+
+    @staticmethod    
+    def castRays(origin, orientation, surroundings, maxRaySize) -> list:
+        """
+        Cast octilinear rays out from Snake's head to provide Snake awareness of its surroundings.
+
+        Note
+        ----
+        'Closeness' defined as 1/dist.
+        """
+        limits, rays = {}, {}
+
+        # get distance from Snake's head to map borders
+        bounds = {
+            UP: origin[1],
+            RIGHT: (surroundings.size[0] - origin[0] - 1),
+            DOWN: (surroundings.size[1] - origin[1] - 1),
+            LEFT: origin[0]
+        }
+
+        # determine how far rays can go
+        for direction in ORTHOGONAL:
+            limits[direction] = bounds[direction]
+
+        for diagonal in DIAGONAL:
+            limits[diagonal] = min(limits[(diagonal[0], 0)], limits[(0, diagonal[1])])
+
+        # determine closeness of Snake to walls, initialize rays dict
+        for direction in DIRECTIONS:
+            distance = limits[direction] + 1 if direction in ORTHOGONAL else (limits[direction] + 1) * 1.414
+            rays[direction] = {"wall": 1 / distance * int(distance <= maxRaySize), "food": 0, "body": 0}
+
+        visionBounds = []
+        probe = None
+        for ray, targets in rays.items():  # ...in each 8 octilinear directions
+            bound = min(limits[ray], maxRaySize)
+            step = 1
+            while not targets["food"] and not targets["body"] and step <= bound:  # take specified number of steps away from Snake's head and don't let rays search outside of map borders
+                probe = (origin[0] + ray[0] * step, origin[1] + ray[1] * step)  # update probe position
+                if not targets["food"] and surroundings[probe] == FOOD:  # if food not found yet and found food
+                    targets["food"] = 1 / Behavior.dist(origin, probe)
+                elif not targets["body"] and surroundings[probe] == DANGER:  # if body not found yet and found body
+                    targets["body"] = 1 / Behavior.dist(origin, probe)
+                step += 1	
+            visionBounds.append((origin, (origin[0] + ray[0] * bound, origin[1] + ray[1] * bound)))  # add end of ray to list
+
+        vision = np.zeros(24)
+
+        for i, direction in enumerate(DIRECTIONS):  # for each direction
+            for j, item in ((0, "food"), (8, "body"), (16, "wall")):
+                # need to change reference so 'global up' will be 'Snake's left' is Snake if facing 'global right'
+                vision[i + j] = rays[Behavior.getLocalDirection(orientation, direction)][item]  # add data
+
+        # PRINT VALUES OF DATA TO DEBUG
+        #for i in range(3):
+        #    for j in range(8):
+        #        print(round(data[i * 8 + j], 3), end=" ")
+        #    print()
+        return vision, visionBounds
+
+    @staticmethod
+    def getLocalDirection(basis: tuple, direction: tuple) -> tuple:
+        """
+        Reorients direction to perspective of basis.
+
+        Parameters
+        ----------
+        basis: tuple
+            Local direction
+        direction: tuple
+            Global direction
+
+        Returns
+        -------
+        tuple: reoriented direction.
+        """
+        return {
+            UP: lambda unit: unit,
+            RIGHT: lambda unit: (-unit[1], unit[0]),
+            DOWN: lambda unit: (-unit[0], -unit[1]),
+            LEFT: lambda unit: (unit[1], -unit[0]),
+        }[basis](direction)
+
+    @staticmethod
+    @jit(nopython=True)
+    def dist(pt1: tuple, pt2: tuple) -> float:
+        """
+        Procides Euclidean distance, accelerated with jit.
+
+        Parameters
+        ----------
+        pt1: tuple
+            First point
+        pt2: tuple
+            Second point
+
+        Returns
+        -------
+        float: Euclidean distance
+        """
+        return ((pt2[0] - pt1[0]) ** 2 + (pt2[1] - pt1[1]) ** 2) ** 0.5
+        
     @staticmethod
     def getMove(basis: tuple, direction: tuple) -> str:
         """
@@ -117,7 +239,7 @@ class Behavior:
         tuple: v rotated by 90 degrees counter-clockwise
         """
         return tuple(np.asarray(v, dtype=float) @ np.array([[0., -1.], [1., 0.]]))
-
+        
 
 class Manual(Behavior):
     """Provides direction based on keyboard input."""
@@ -125,7 +247,7 @@ class Manual(Behavior):
         """Initializes base class."""
         Behavior.__init__(self)
 
-    def __call__(self, direction: tuple) -> tuple:
+    def __call__(self, head, direction: tuple, awareness) -> tuple:
         """
         Returns keyboard input, ignores vision.
 
@@ -155,7 +277,7 @@ class Manual(Behavior):
         return newDirection, move
 
 
-class NeuralNetwork(neural_nets.FFNN, Behavior):
+class NeuralNetwork(Behavior):
     """
     Uses neural network to decide direction.
 
@@ -179,13 +301,18 @@ class NeuralNetwork(neural_nets.FFNN, Behavior):
             Neural network super class parameters
         """
         Behavior.__init__(self)
-        neural_nets.FFNN.__init__(self, layers, **kwargs)
+        self.network = neural_nets.FFNN(layers, **kwargs)
         self.smartShield = smartShield
 
-    def getNetwork(self):
-        return {"weights": self.weights, "biases": self.biases}
-		
-    def __call__(self, vision: np.ndarray, direction: tuple) -> tuple:
+    def getBrain(self):
+        return {"type": "neural network", "weights": self.network.weights, "biases": self.network.biases}
+
+    def takeStock(self, head, direction, awareness, surroundings):
+        vision, visionBounds = Behavior.castRays(head, direction, surroundings, awareness["maxVision"])
+        awareness["vision"] = vision
+        awareness["visionBounds"] = visionBounds
+        
+    def __call__(self, head, direction, awareness) -> tuple:
         """
         Provides direction by feeding vision to neural network.
 
@@ -200,7 +327,8 @@ class NeuralNetwork(neural_nets.FFNN, Behavior):
         -------
         tuple: (new global direction, move necessary to have Snake oriented to this direction)
         """
-        out = self.feedForward(vision)
+        vision = awareness["vision"]
+        out = self.network.feedForward(vision)
         
         decision = np.argmax(out)
         newDirection = {0: Behavior.rotateCCW(direction), 1: direction, 2: Behavior.rotateCW(direction)}[decision]
@@ -221,7 +349,7 @@ class Replay(Behavior):
     t: int
         Indexes data
     """
-    def __init__(self, data: list) -> None:
+    def __init__(self, memories: list) -> None:
         """
         Initializes base class.
 
@@ -231,10 +359,10 @@ class Replay(Behavior):
             List of (x, y) moves
         """
         Behavior.__init__(self)
-        self.data = data
+        self.memories = memories
         self.t = 0
 
-    def __call__(self, vision: np.ndarray, direction: tuple) -> tuple:
+    def __call__(self, head, direction, awareness) -> tuple:
         """
         Provides direction by indexing pre-recorded moves.
 
@@ -249,7 +377,7 @@ class Replay(Behavior):
         -------
         tuple: (new global direction, move necessary to have Snake oriented to this direction)
         """
-        newDirection = self.data[self.t]
+        newDirection = self.memories[self.t]
         move = Behavior.getMove(direction, newDirection)
         self.t += 1
         return newDirection, move
