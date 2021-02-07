@@ -52,13 +52,17 @@ def calcRefeed(size):
     """Calculates how much snake's hunger diminishes based on its size"""
     return calcHunger(size)
 
+starvation = {
+    "active": True,
+    "maxHunger": calcMaxHunger,
+    "refeed": calcRefeed,
+}
+	
 smartShield = True  # allow behavior to overwrite AI neural network decisions
 
 snakeParams = {
         "initialSize": initialSnakeSize,
-        "vision": snakeVision,
-        "maxHunger": calcMaxHunger,
-        "refeed": calcRefeed,
+        "vision": snakeVision,        
     }
 	
 networkArchitecture = (24, 16, 3)  # FFNN layers

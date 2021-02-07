@@ -10,7 +10,6 @@ Map
 """
 
 from copy import deepcopy
-from numba import jit
 import numpy as np
 from random import choice
 
@@ -58,7 +57,7 @@ class Environment:
         Displays map and environment in terminal.
     """
 
-    def __init__(self, snake: snakes.Snake, mapSize: tuple, origin: tuple = None, food: list = None) -> None:
+    def __init__(self, snake: snakes._SnakeBase, mapSize: tuple, origin: tuple = None, food: list = None) -> None:
         """
         Initializes environment, places snake and food.
 
@@ -86,7 +85,6 @@ class Environment:
         self.foodLog = []
 
         self.prevSnakeBody = []
-        self.rays = []
 
         if self.snake.dead:
             self.snake.revive()
@@ -94,12 +92,10 @@ class Environment:
         self._placeSnake()
         self._placeFood()
 
-        self.snakeVision = self._castRays()
-
     def step(self) -> None:
         """Takes a time step in game, calculating next state and updating game objects."""
         self.prevSnakeBody = self.snake.body.copy()
-        self.snake.move(self.snakeVision)
+        self.snake.move(self.gameMap)
         self.moveLog.append(self.snake.direction)
 
         valueAtHead = self.gameMap[self.snake.head]
@@ -114,7 +110,6 @@ class Environment:
                 self._placeFood()
             else:  # Snake moved into open space
                 self.gameMap[self.snake.prevTail] = EMPTY
-            self.snakeVision = self._castRays()  # update vision of Snake
 
     def active(self) -> bool:
         """
@@ -157,73 +152,11 @@ class Environment:
             mapCopy[e] = "."
         print(mapCopy)
 
-    def _castRays(self) -> list:
-        """
-        Cast octilinear rays out from Snake's head to provide Snake awareness of its surroundings.
-
-        Note
-        ----
-        'Closeness' defined as 1/dist.
-        """
-        origin = self.snake.head
-        snakeDirection = self.snake.direction
-        limits, rays = {}, {}
-
-        # get distance from Snake's head to map borders
-        bounds = {
-            UP: origin[1],
-            RIGHT: (self.gameMap.size[0] - origin[0] - 1),
-            DOWN: (self.gameMap.size[1] - origin[1] - 1),
-            LEFT: origin[0]
-        }
-
-        # determine how far rays can go
-        for direction in ORTHOGONAL:
-            limits[direction] = bounds[direction]
-
-        for diagonal in DIAGONAL:
-            limits[diagonal] = min(limits[(diagonal[0], 0)], limits[(0, diagonal[1])])
-
-        # determine closeness of Snake to walls, initialize rays dict
-        for direction in DIRECTIONS:
-            distance = limits[direction] + 1 if direction in ORTHOGONAL else (limits[direction] + 1) * 1.414
-            rays[direction] = {"wall": 1 / distance * int(distance <= self.snake.vision), "food": 0, "body": 0}
-
-        self.rays.clear()  # reset so rays contains info only of this instance
-		
-        probe = None
-        for ray, targets in rays.items():  # ...in each 8 octilinear directions
-            bound = min(limits[ray], self.snake.vision)
-            step = 1
-            while not targets["food"] and not targets["body"] and step <= bound:  # take specified number of steps away from Snake's head and don't let rays search outside of map borders
-                probe = (origin[0] + ray[0] * step, origin[1] + ray[1] * step)  # update probe position
-                if not targets["food"] and self.gameMap[probe] == FOOD:  # if food not found yet and found food
-                    targets["food"] = 1 / Environment.dist(origin, probe)
-                elif not targets["body"] and self.gameMap[probe] == DANGER:  # if body not found yet and found body
-                    targets["body"] = 1 / Environment.dist(origin, probe)
-                step += 1	
-            self.rays.append((origin, (origin[0] + ray[0] * bound, origin[1] + ray[1] * bound)))  # add end of ray to list
-		
-        data = np.zeros(24)
-
-        for i, direction in enumerate(DIRECTIONS):  # for each direction
-            for j, item in ((0, "food"), (8, "body"), (16, "wall")):
-                # need to change reference so 'global up' will be 'Snake's left' is Snake if facing 'global right'
-                data[i + j] = rays[Environment.changeReference(snakeDirection, direction)][item]  # add data
-
-        # PRINT VALUES OF DATA TO DEBUG
-        #for i in range(3):
-        #    for j in range(8):
-        #        print(round(data[i * 8 + j], 3), end=" ")
-        #    print()
-        #self.display()
-        return data
-
     def _placeSnake(self) -> None:
         """Translate Snake to its starting coordinates."""
         if self.origin is None:
             self.origin = self.snake.initialSize, int(self.gameMap.size[1] / 2)
-        self.snake.translate(self.origin)
+        self.snake.setReference(self.origin)
         for coord in self.snake.body:
             self.gameMap[coord] = DANGER
 
@@ -237,48 +170,6 @@ class Environment:
 
         self.foodLog.append(pos)
         self.gameMap[pos] = FOOD
-
-    @staticmethod
-    def changeReference(basis: tuple, direction: tuple) -> tuple:
-        """
-        Reorients direction to perspective of basis.
-
-        Parameters
-        ----------
-        basis: tuple
-            Local direction
-        direction: tuple
-            Global direction
-
-        Returns
-        -------
-        tuple: reoriented direction.
-        """
-        return {
-            UP: lambda unit: unit,
-            RIGHT: lambda unit: (-unit[1], unit[0]),
-            DOWN: lambda unit: (-unit[0], -unit[1]),
-            LEFT: lambda unit: (unit[1], -unit[0]),
-        }[basis](direction)
-
-    @staticmethod
-    @jit(nopython=True)
-    def dist(pt1: tuple, pt2: tuple) -> float:
-        """
-        Procides Euclidean distance, accelerated with jit.
-
-        Parameters
-        ----------
-        pt1: tuple
-            First point
-        pt2: tuple
-            Second point
-
-        Returns
-        -------
-        float: Euclidean distance
-        """
-        return ((pt2[0] - pt1[0]) ** 2 + (pt2[1] - pt1[1]) ** 2) ** 0.5
 
 
 class Map(dict):

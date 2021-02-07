@@ -38,7 +38,7 @@ def playGame(environment: environments.Environment, render: bool = True) -> None
         _simulateGame(environment)
 
 
-def playTrainingGame(snake: snakes.Snake, render: bool = False) -> dict:
+def playTrainingGame(snake: snakes._SnakeBase, render: bool = False) -> dict:
     """
     Plays game with settings.mapSize sized map.
 

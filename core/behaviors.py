@@ -29,9 +29,9 @@ class Behavior:
         """Does nothing, expandable"""
         pass
 
-    def __call__(self, vision, direction) -> tuple:
+    def __call__(self) -> tuple:
         """Does nothing, expandable"""
-        pass
+        raise NotImplementedError
     
     @staticmethod
     def smartShield(decision: int, newDirection: int, move: str, vision: np.ndarray, direction):
@@ -157,7 +157,7 @@ class Manual(Behavior):
         return newDirection, move
 
 
-class AI(neural_nets.FFNN, Behavior):
+class NeuralNet(neural_nets.FFNN, Behavior):
     """
     Uses neural network to decide direction.
 
@@ -183,8 +183,10 @@ class AI(neural_nets.FFNN, Behavior):
         Behavior.__init__(self)
         neural_nets.FFNN.__init__(self, layers, **kwargs)
         self.smartShield = smartShield
-        #self.confidence = []
 
+    def getNetwork(self):
+        return {"weights": self.weights, "biases": self.biases}
+		
     def __call__(self, vision: np.ndarray, direction: tuple) -> tuple:
         """
         Provides direction by feeding vision to neural network.
@@ -201,10 +203,6 @@ class AI(neural_nets.FFNN, Behavior):
         tuple: (new global direction, move necessary to have Snake oriented to this direction)
         """
         out = self.feedForward(vision)
-        #confidence = 49.892198579 * np.log10(100 * (100*max(out)/out.sum() - 33.33) / (100 - 33.33) + 1)
-        #self.confidence.append(confidence)
-		
-		# MAKE SURE IF USING CONFIDENCE TO CLEAR IN SNAKE RESET!!!
         
         decision = np.argmax(out)
         newDirection = {0: Behavior.rotateCCW(direction), 1: direction, 2: Behavior.rotateCW(direction)}[decision]
