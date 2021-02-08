@@ -18,7 +18,7 @@ import numpy as np
 from copy import deepcopy
 from numba import jit
 
-from core import neural_nets
+from core import neural_nets, pathfinding
 from core.constants import *
 
 __author__ = "Grant Holmes"
