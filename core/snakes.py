@@ -124,9 +124,10 @@ class Snake:
         self.dead = False
 
         self.awareness = {
-            "vision": None,
             "maxVision": maxVision,
-            "visionBounds": None,
+            "visionBounds": [],
+            "path": [],
+			"open": {(-1, 0): 0, (0, -1): 0, (1, 0): 0}
         }
 
     def move(self) -> None:
@@ -139,7 +140,8 @@ class Snake:
             24x1 list of floats, 0-7 closeness to food, 8-15 closeness to body, 16-23 closeness to wall
         """
         self.prevTail = self.body[-1]
-        self.direction, move = self.behavior(self.head, self.direction, self.awareness)
+        self.direction, move = self.behavior(self.head, self.direction)
+		
         self.moveCount[move] += 1
 
         self.body.pop()
@@ -161,8 +163,9 @@ class Snake:
         self.starvation = self.hungerFunc(len(self))
         self.hunger = 0
         
-    def updateAwareness(self, surroundings):
-        self.behavior.takeStock(self.head, self.direction, self.awareness, surroundings)
+    def makeAware(self, environment):
+        if (observed := self.behavior.takeStock(self.head, self.direction, self.awareness, environment))is not None:
+            self.awareness.update(observed)
         
     def setReference(self, origin: tuple) -> None:
         """
@@ -207,9 +210,10 @@ class Snake:
         self.hunger = 0
         self.age = 0
         self.awareness = {
-            "vision": None,
             "maxVision": self.awareness["maxVision"],
-            "visionBounds": None
+            "visionBounds": [],
+            "path": [],
+			"open": {(-1, 0): 0, (0, -1): 0, (1, 0): 0}
         }
         self.behavior.reset()
         

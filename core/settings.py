@@ -29,8 +29,8 @@ b = perimeter + offset
 gridColors = ("lightBlue", "mediumBlue", "mediumBlue")  # color of GUI window background
 
 # FPS AND DISPLAY
-targetFPS = 120
-smoothness = 2  # controls how fast and smooth animations run
+targetFPS = 60
+smoothness = 3  # controls how fast and smooth animations run
 
 # GENETICS
 populationSize = 500

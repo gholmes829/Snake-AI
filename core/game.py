@@ -154,6 +154,9 @@ def _renderEnvironment(engine: graphics.Engine, environment: environments.Enviro
         end = engine.scaleUp((end[0] + dx, end[1] + dy))
 
         engine.renderLine(start, end, 2, Engine.colors["red"])
+		
+    for coord in environment.snake.awareness["path"]:
+        engine.renderRect(engine.scaleUp(coord), engine.gridSize, Engine.colors["red"], alpha=50)
 
     # render Snake's body
     for i, coord in enumerate(prev):

@@ -114,10 +114,11 @@ class Driver:
                 "hungerFunc": settings.hungerFunc,
                 "color": color
             }
-            
-
-            
-            snake = snakes.Snake("neural network", behaviorKwargs=behaviorKwargs, **snakeKwargs)
+            snake = snakes.Snake("cycle", **snakeKwargs)
+            #snake = snakes.Snake("floodPathfinder", **snakeKwargs) 
+            #snake = snakes.Snake("floodfill", **snakeKwargs) 
+            #snake = snakes.Snake("pathfinder", **snakeKwargs)            
+            #snake = snakes.Snake("neural network", behaviorKwargs=behaviorKwargs, **snakeKwargs)
             self.environment = environments.Environment(snake, settings.mapSize)
             game.playGame(self.environment, render=True)
             self._checkSave()

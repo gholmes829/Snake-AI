@@ -86,7 +86,7 @@ class Environment:
 
         self._placeSnake()
         self._placeFood()
-        self.snake.updateAwareness(self.gameMap)
+        self.snake.makeAware(self.gameMap)
 
     def step(self) -> None:
         """Takes a time step in game, calculating next state and updating game objects."""
@@ -105,8 +105,7 @@ class Environment:
                 self._placeFood()
             else:  # Snake moved into open space
                 self.gameMap[self.snake.prevTail] = EMPTY
-            self.snake.updateAwareness(self.gameMap)
-
+        self.snake.makeAware(self.gameMap)
     def active(self) -> bool:
         """
         Checks if game is over or not.
@@ -194,6 +193,7 @@ class Map(dict):
         dict.__init__(self)
         self.size = size
         edges = ({-1, size[0]}, {-1, size[1]})
+        perimeter = 2 * (size[0] + size[1]) + 4
         for i in range(-1, size[0] + 1):
             for j in range(-1, size[1] + 1):
                 if i in edges[0] or j in edges[1]:
