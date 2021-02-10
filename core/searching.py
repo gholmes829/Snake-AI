@@ -99,10 +99,13 @@ def dist(pt1: tuple, pt2: tuple) -> float:
 	float: Euclidean distance
 	"""
 	return ((pt2[0] - pt1[0]) ** 2 + (pt2[1] - pt1[1]) ** 2) ** 0.5\
+
+
+
 	
-def pathfind(space, origin, target, impassable=-1) -> list:
+def longPathfind(space, origin, target, impassable=-1) -> list:
 	"""
-	A* pathfinding with Manhattan distance for h cost
+	A* pathfinding.
 	"""
 	path = []
 	passable = {coord for coord, value in space.items() if value != impassable}
@@ -124,7 +127,47 @@ def pathfind(space, origin, target, impassable=-1) -> list:
 				if neighbor not in costSoFar or cost < costSoFar[neighbor]:
 					cameFrom[neighbor] = current
 					costSoFar[neighbor] = cost
-					priority = cost + abs(neighbor[0] - target[0]) + abs(neighbor[1] - target[1])  # Manhattan distance
+					priority = 1 / (cost + dist(neighbor, target))
+					frontier.put((priority, added, neighbor))  # counter acts as tiebreaker in case costs are same
+					added += 1
+
+	if target not in cameFrom:  # target not reached
+		return path
+
+	path.append(target)
+	while (add := cameFrom[path[-1]]) != cameFrom[add]:
+		path.append(add)
+
+	path.append(origin)
+	return path
+
+	
+
+def pathfind(space, origin, target, impassable=-1) -> list:
+	"""
+	A* pathfinding.
+	"""
+	path = []
+	passable = {coord for coord, value in space.items() if value != impassable}
+	#if target not in passable or origin == target:  # target can not be reached or is already reached
+	#	return path
+	
+	directions = {(0, -1), (1, 0), (0, 1), (-1, 0)}
+	added = 0
+
+	frontier = PriorityQueue()  # uses priority queue rather than iterative approach to increase performance
+	cameFrom, costSoFar = {origin: origin}, {origin: 0}
+	
+	frontier.put((0, 0, origin))
+
+	while not frontier.empty() and (current := frontier.get()[2]) != target:
+		for direction in directions:
+			if (neighbor := (current[0] + direction[0], current[1] + direction[1])) in passable or neighbor == target:
+				cost = costSoFar[current] + 1
+				if neighbor not in costSoFar or cost < costSoFar[neighbor]:
+					cameFrom[neighbor] = current
+					costSoFar[neighbor] = cost
+					priority = cost + abs(neighbor[0] - target[0]) + abs(neighbor[1] - target[1])
 					frontier.put((priority, added, neighbor))  # counter acts as tiebreaker in case costs are same
 					added += 1
 
@@ -138,6 +181,129 @@ def pathfind(space, origin, target, impassable=-1) -> list:
 	path.append(origin)
 	return path
 	
+	
+
+def longPathHelper(space, path, i, pickup, impassable=-1, corner=True, recursion=True):
+	#print("New fork:", i)
+	allPaths = []
+	incremented = False
+	#fork = False
+	while i < len(path) - 2:
+		curr = path[i]
+		next = path[i + 1]
+		third = path[i + 2]
+		extended = False
+		fork = False
+		direction1 = (next[0] - curr[0], next[1] - curr[1])
+		direction2 = (third[0] - next[0], third[1] - next[1])
+		#print("State:", curr, next, third, direction1)
+		if recursion and (corner or incremented) and all((direction1[0] + direction2[0], direction1[1] + direction2[1])):
+			new = (curr[0] + direction2[0], curr[1] + direction2[1])
+			if new in space and new not in path and space[new] != impassable:
+				#print("Replacing corner, forking", curr, next, third)
+				copy = path.copy()
+				copy[i + 1] = new
+				allPaths.append(longPathHelper(space, copy, i, pickup, corner=False))
+
+		turns = ((direction1[1], -direction1[0]), (-direction1[1], direction1[0]))
+		for ti, turn in enumerate(turns):
+			extension1, extension2 = (curr[0] + turn[0], curr[1] + turn[1]), (next[0] + turn[0], next[1] + turn[1])
+			if extension1 in space and extension2 in space and extension1 not in path and extension2 not in path and space[extension1] != impassable and space[extension2] != impassable:
+				path.insert(i + 1, extension1)
+				path.insert(i + 2, extension2)
+				extended = True
+				#print("EXTENDING", path)
+				if ti == 0:
+					fork = True
+				break
+		
+		if fork and recursion:
+			extension1, extension2 = (curr[0] + turns[1][0], curr[1] + turns[1][1]), (next[0] + turns[1][0], next[1] + turns[1][1])
+			if extension1 in space and extension2 in space and extension1 not in path and extension2 not in path and space[extension1] != impassable and space[extension2] != impassable:
+				#print("Multiple options, FORKING")
+				copy = path.copy()
+				copy[i + 1] = extension1
+				copy[i + 2] = extension2
+				allPaths.append(longPathHelper(space, copy, i, pickup))
+		incremented = True	
+			
+		if not extended:
+			#print("Incrementing", i, i+1)
+			
+			i += 1
+	
+	
+	while i < len(path) - 1:
+		curr = path[i]
+		next = path[i+1]
+		cornerPossible = False
+		direction1 = (next[0] - curr[0], next[1] - curr[1])
+		if i+2 < len(path):
+			third = path[i + 2]
+			direction2 = (third[0] - next[0], third[1] - next[1])
+			cornerPossible = True
+		extended = False
+		fork = False
+		#print("State:", curr, next, direction1)
+		
+		if cornerPossible and recursion and (corner or incremented) and all((direction1[0] + direction2[0], direction1[1] + direction2[1])):
+			new = (curr[0] + direction2[0], curr[1] + direction2[1])
+			if new in space and new not in path and space[new] != impassable:
+				#print("Replacing corner, forking", curr, next, third)
+				copy = path.copy()
+				copy[i + 1] = new
+				allPaths.append(longPathHelper(space, copy, i, pickup, corner=False))
+		
+		turns = ((direction1[1], -direction1[0]), (-direction1[1], direction1[0]))
+		for ti, turn in enumerate(turns):
+			extension1, extension2 = (curr[0] + turn[0], curr[1] + turn[1]), (next[0] + turn[0], next[1] + turn[1])
+			if extension1 in space and extension2 in space and extension1 not in path and extension2 not in path and space[extension1] != impassable and space[extension2] != impassable:
+				path.insert(i + 1, extension1)
+				path.insert(i + 2, extension2)
+				extended = True
+				#print("EXTENDING", path)
+				if ti == 0:
+					fork = True
+				break
+		
+		if fork and recursion:
+			extension1, extension2 = (curr[0] + turns[1][0], curr[1] + turns[1][1]), (next[0] + turns[1][0], next[1] + turns[1][1])
+			if extension1 in space and extension2 in space and extension1 not in path and extension2 not in path and space[extension1] != impassable and space[extension2] != impassable:
+				copy = path.copy()
+				copy.insert(i + 1, extension1)
+				copy.insert(i + 2, extension2)
+				allPaths.append(longPathHelper(space, copy, i, pickup))
+		incremented = True
+		if not extended:
+			#print("Incrementing", i, i+1)
+			
+			i += 1
+
+	allPaths.append(path)
+	bestPath, bestLength = [], 0
+	for path in allPaths:
+		length = len(path)
+		if length > bestLength and pickup in path:
+			bestPath = path
+			bestLength = length
+	
+	return bestPath
+	
+	
+def longestPath(space, origin, target, pickup, impassable=-1, recursion=True) -> list:
+	path = pathfind(space, origin, target, impassable=impassable)
+	#print("Origin, target:", origin, target)
+	#print(space)
+	#space[target] = -1
+	#print("A* Short path", path)
+	longPath = longPathHelper(space, path.copy(), 0, pickup, impassable=impassable, recursion=recursion)
+	#print("Longest path", longPath, len(longPath))
+	return longPath
+			
+			
+			
+			
+
 def floodFillCount(space, origin, stopValue=-1):
     #print(origin)
     if origin not in space or space[origin] == stopValue:
@@ -146,23 +312,31 @@ def floodFillCount(space, origin, stopValue=-1):
     return 1 + sum([floodFillCount(space, (origin[0] + newMove[0], origin[1] + newMove[1])) for newMove in {(0, -1), (1, 0), (0, 1), (-1, 0)}])
 	
 	
+# WAYYYYYYYYYYYY TOO SLOW
 	
-	
-def hamiltonian(space, origin, impassable=-1):
-	numVertices = len([value for value in space.values() if value == 0]) + 2
+def hamiltonian(space, origin, target, impassable=-1):
+	numVertices = len([value for value in space.values() if value == 0 or value == 1]) + 2
 	path = [origin] + [(-1, -1)] * (numVertices - 2)
-	if cycle(space, path, 1):
+	success = cycle(space, path, target, 1)
+	#print(origin, target)
+	print()
+	if success:
+
+		print("Success!")
 		return path
 	else:
+		print("Failed...")
 		return []
 	
-def cycle(space, path, index):
-	#print()
+
+	
+def cycle(space, path, target, index):
 	#print(path, index)
 	if index == len(path):
 		#return valid(space, path[0], index, path[-1])
-		start, end = path[0], path[-1]
-		diff = (abs(start[0] - end[0]), abs(start[1] - end[1]))
+	
+		end = path[-1]
+		diff = (abs(target[0] - end[0]), abs(target[1] - end[1]))
 		return sum(diff) == 1
 	else:
 		origin = path[index-1]
@@ -171,7 +345,7 @@ def cycle(space, path, index):
 			#print(nextPos)
 			if valid(space, path, index, nextPos):
 				path[index] = nextPos
-				if cycle(space, path, index + 1):
+				if cycle(space, path, target, index + 1):
 					return True
 				path[index] = (-1, -1)
 		return False
@@ -185,7 +359,7 @@ def valid(space, path, index, nextPos):
 	return sum(diff) == 1
 
 	
-	
+
 	
 	
 	

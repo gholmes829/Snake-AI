@@ -84,6 +84,8 @@ class Environment:
         self.moveLog = []
         self.foodLog = []
 
+        self.snakeWon = False
+		
         self._placeSnake()
         self._placeFood()
         self.snake.makeAware(self.gameMap)
@@ -95,6 +97,7 @@ class Environment:
         self.moveLog.append(self.snake.direction)
         entityAtHead = self.gameMap[self.snake.head]
         if entityAtHead == DANGER:  # Snake ran into wall or its body
+            #print("OUTER CRASH")
             self.snake.kill()
         else:
             self.gameMap[self.snake.head] = DANGER
@@ -114,7 +117,7 @@ class Environment:
         -------
         bool: if Snake is dead
         """
-        return not self.snake.dead
+        return not self.snake.dead and not self.snakeWon
 
     def getData(self) -> dict:
         """
@@ -161,10 +164,15 @@ class Environment:
         if self.foodQueue:
             pos = (self.foodQueue.pop())
         if not pos or self.gameMap[pos] != EMPTY:
-            pos = choice(self.gameMap.filter(EMPTY))
+            emptySpaces = self.gameMap.filter(EMPTY)
+            if emptySpaces:
+                pos = choice(emptySpaces)
+                self.foodLog.append(pos)
+                self.gameMap[pos] = FOOD
+            else:
+                self.snakeWon = True
+                print("WIN!")
 
-        self.foodLog.append(pos)
-        self.gameMap[pos] = FOOD
 
 
 class Map(dict):

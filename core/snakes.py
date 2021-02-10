@@ -140,7 +140,7 @@ class Snake:
             24x1 list of floats, 0-7 closeness to food, 8-15 closeness to body, 16-23 closeness to wall
         """
         self.prevTail = self.body[-1]
-        self.direction, move = self.behavior(self.head, self.direction)
+        self.direction, move = self.behavior(self.body, self.direction)
 		
         self.moveCount[move] += 1
 
@@ -164,7 +164,7 @@ class Snake:
         self.hunger = 0
         
     def makeAware(self, environment):
-        if (observed := self.behavior.takeStock(self.head, self.direction, self.awareness, environment))is not None:
+        if (observed := self.behavior.takeStock(self.body, self.direction, self.awareness, environment))is not None:
             self.awareness.update(observed)
         
     def setReference(self, origin: tuple) -> None:

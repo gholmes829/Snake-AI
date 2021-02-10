@@ -45,14 +45,14 @@ class Behavior:
         if type(self) == Behavior:
             raise NotImplementedError
 
-    def __call__(self, head, direction) -> tuple:
+    def __call__(self, body, direction) -> tuple:
         """Does nothing, expandable"""
         raise NotImplementedError
         
     def getBrain(self):
         return {"type": "behavior"}
         
-    def takeStock(self, head, direction, awareness, environment):
+    def takeStock(self, body, direction, awareness, environment):
         return
         
     def reset(self):
@@ -155,7 +155,7 @@ class Manual(Behavior):
         """Initializes base class."""
         Behavior.__init__(self)
 
-    def __call__(self, head, direction: tuple) -> tuple:
+    def __call__(self, body, direction: tuple) -> tuple:
         """
         Returns keyboard input, ignores vision.
 
@@ -207,7 +207,7 @@ class Replay(Behavior):
         self.memories = memories
         self.t = 0
 
-    def __call__(self, head, direction) -> tuple:
+    def __call__(self, body, direction) -> tuple:
         """
         Provides direction by indexing pre-recorded moves.
 
@@ -261,11 +261,11 @@ class NeuralNetwork(AI):
     def getBrain(self):
         return {"type": "neural network", "weights": self.network.weights, "biases": self.network.biases}
 
-    def takeStock(self, head, direction, awareness, environment):
-        self.vision, visionBounds = searching.castRays(head, direction, environment, awareness["maxVision"])
+    def takeStock(self, body, direction, awareness, environment):
+        self.vision, visionBounds = searching.castRays(body[0], direction, environment, awareness["maxVision"])
         return {"visionBounds": visionBounds}
         
-    def __call__(self, head, direction) -> tuple:
+    def __call__(self, body, direction) -> tuple:
         """
         Provides direction by feeding vision to neural network.
 
@@ -296,15 +296,15 @@ class Pathfinder(AI):
         AI.__init__(self)
         self.path = []
 		
-    def takeStock(self, head, direction, awareness, environment):
+    def takeStock(self, body, direction, awareness, environment):
         if not self.path:
-            self.path = searching.pathfind(environment, head, environment.filter(1)[0])[:-1]
+            self.path = searching.pathfind(environment, body[0], environment.filter(1)[0])[:-1]
         return {"path": set(self.path)}
 
-    def __call__(self, head, direction):
+    def __call__(self, body, direction):
         if self.path:
             moveTo = self.path.pop()
-            newDirection = (moveTo[0] - head[0], moveTo[1] - head[1])
+            newDirection = (moveTo[0] - body[0][0], moveTo[1] - body[0][1])
             move = {Behavior.rotateCCW(direction): "left", direction: "straight", Behavior.rotateCW(direction): "right"}[newDirection]
         else:
             newDirection, move = direction, "straight"
@@ -317,21 +317,33 @@ class Hamiltonian(AI):
         AI.__init__(self)
         self.path = []
 		
-    def takeStock(self, head, direction, awareness, environment):
+    def takeStock(self, body, direction, awareness, environment):
         if not self.path:
-            self.path = searching.hamiltonian(environment, head)[:-1] + [head]
-            if self.path:
-                print("Cycle found!")
+            #print()
+            #print(body)
+            copy = deepcopy(environment)
+            copy[body[-1]] = 0
+            if (initialPath := searching.longestPath(copy, body[0], body[-1], environment.filter(1)[0])[:-1]):
+                connection = body[:-1]
+                #print("Longest path", initialPath)
+                #print("Connection", connection)
+                #print("Final path:", connection + initialPath)
+                self.path = connection + initialPath
+            #if self.path:
+                #print(body[0])
+                #print("Cycle found!", self.path)
         return {"path": set(self.path)}
 
-    def __call__(self, head, direction):
+    def __call__(self, body, direction):
+
         if self.path:
             moveTo = self.path.pop()
-            newDirection = (moveTo[0] - head[0], moveTo[1] - head[1])
+            #print(body[0], moveTo)
+            newDirection = (moveTo[0] - body[0][0], moveTo[1] - body[0][1])
             move = {Behavior.rotateCCW(direction): "left", direction: "straight", Behavior.rotateCW(direction): "right"}[newDirection]
         else:
             newDirection, move = direction, "straight"
-
+            print("GOING STRAIGHT!!!!!!!!!!!!!")
         return newDirection, move
 		
 		
@@ -341,14 +353,14 @@ class FloodPathfinder(AI):
         self.path = []
         self.open = {(-1, 0): 0, (0, -1): 0, (1, 0): 0}
 		
-    def takeStock(self, head, direction, awareness, environment):
+    def takeStock(self, body, direction, awareness, environment):
         if not self.path:
-            self.path = searching.pathfind(environment, head, environment.filter(1)[0])[:-1]
+            self.path = searching.pathfind(environment, body[0], environment.filter(1)[0])[:-1]
 			
         moves = {(-1, 0): Behavior.rotateCCW(direction), (0, -1): direction, (1, 0): Behavior.rotateCW(direction)}
         for turnDirection in self.open:
             newDirection = moves[turnDirection]
-            if (newPos := (head[0] + newDirection[0], head[1] + newDirection[1])) in environment and environment[newPos] != -1:
+            if (newPos := (body[0][0] + newDirection[0], body[0][1] + newDirection[1])) in environment and environment[newPos] != -1:
     
                 self.open[turnDirection] = searching.floodFillCount(deepcopy(environment), newPos)
             else:
@@ -356,10 +368,10 @@ class FloodPathfinder(AI):
 			
         return {"path": set(self.path)}
 
-    def __call__(self, head, direction):
+    def __call__(self, body, direction):
         if self.path:
             moveTo = self.path.pop()
-            newDirection = (moveTo[0] - head[0], moveTo[1] - head[1])
+            newDirection = (moveTo[0] - body[0][0], moveTo[1] - body[0][1])
             move = {Behavior.rotateCCW(direction): "left", direction: "straight", Behavior.rotateCW(direction): "right"}[newDirection]
         else:
             if sum(self.open.values()) != 0:
@@ -377,11 +389,11 @@ class FloodFill(AI):
         AI.__init__(self)
         self.open = {(-1, 0): 0, (0, -1): 0, (1, 0): 0}
 		
-    def takeStock(self, head, direction, awareness, environment):
+    def takeStock(self, body, direction, awareness, environment):
         moves = {(-1, 0): Behavior.rotateCCW(direction), (0, -1): direction, (1, 0): Behavior.rotateCW(direction)}
         for turnDirection in self.open:
             newDirection = moves[turnDirection]
-            if environment[(newPos := (head[0] + newDirection[0], head[1] + newDirection[1]))] != -1:
+            if environment[(newPos := (body[0][0] + newDirection[0], body[0][1] + newDirection[1]))] != -1:
     
                 self.open[turnDirection] = searching.floodFillCount(deepcopy(environment), newPos)
             else:
@@ -389,7 +401,7 @@ class FloodFill(AI):
         #self.open = {turn:searching.floodFillCount(environment, ) for turn in self.open}
         return {"open": self.open}
 
-    def __call__(self, head, direction):
+    def __call__(self, body, direction):
         if sum(self.open.values()) != 0:
             moves = {(-1, 0): Behavior.rotateCCW(direction), (0, -1): direction, (1, 0): Behavior.rotateCW(direction)}
             turn = max(self.open, key=self.open.get)

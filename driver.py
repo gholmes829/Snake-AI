@@ -75,7 +75,8 @@ class Driver:
             mode = Driver.getValidInput(msg, dtype=int, lower=1, upper=len(modes))
             modes[mode]()
             print()
-
+			
+			
     def _playClassic(self) -> None:
         """Opens GUI window and lets user play Snake with keyboard controls."""
         snake = snakes.Snake.Player(**settings.basicSnakeParams)
@@ -119,7 +120,7 @@ class Driver:
             #snake = snakes.Snake("floodfill", **snakeKwargs) 
             #snake = snakes.Snake("pathfinder", **snakeKwargs)            
             #snake = snakes.Snake("neural network", behaviorKwargs=behaviorKwargs, **snakeKwargs)
-            self.environment = environments.Environment(snake, settings.mapSize)
+            self.environment = environments.Environment(snake, settings.mapSize, origin=(3, 0))
             game.playGame(self.environment, render=True)
             self._checkSave()
 
