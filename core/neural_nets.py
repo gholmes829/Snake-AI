@@ -45,7 +45,7 @@ class FFNN:
         }
         self.layerSizes = layerSizes
         weightShapes = [(i, j) for i, j in zip(layerSizes[1:], layerSizes[:-1])]
-        self.weights = [np.random.randn(*s) * np.sqrt(1 / s[1]) for s in weightShapes] if weights is None else weights
+        self.weights = [np.random.randn(*s) for s in weightShapes] if weights is None else weights
         self.biases = [np.random.standard_normal(s) for s in layerSizes[1:]] if biases is None else biases
         self.activation = activations[activation]
 

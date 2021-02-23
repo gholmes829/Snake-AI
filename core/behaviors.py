@@ -259,9 +259,10 @@ class AI(Behavior):
 class NeuralNetwork(AI):
 	def __init__(self, **kwargs) -> None:
 		AI.__init__(self, **kwargs)
+		self.shielded = False
 
 	def getBrain(self):
-		return {"type": "neural network", "weights": self.network.weights, "biases": self.network.biases}
+		return {"type": "neural network", "weights": self.ctrlNetwork.weights, "biases": self.ctrlNetwork.biases}
 
 	def calcMoves(self, body, direction, awareness, environment, hunger):
 		vision, visionBounds = searching.castRays(body[0], direction, environment, awareness["maxVision"])
@@ -275,6 +276,7 @@ class Hybrid(AI):
 	def __init__(self, **kwargs) -> None:
 		AI.__init__(self, **kwargs)
 		self.decision = None
+		self.algorithmCount = {"genetic": 0, "pathfind": 0, "cycle": 0, "floodfill": 0}
 
 	def getBrain(self):
 		return {"type": "neural network", "weights": self.metaNetwork.weights, "biases": self.metaNetwork.biases}
@@ -299,13 +301,15 @@ class Hybrid(AI):
 			inputs = np.array([relativeSize, relativeSpace, foodCloseness, int(bool(short)), int(bool(cycle)), relativeHunger])
 			#print("Making decision with inputs:", inputs)
 			self.decision = np.argmax(self.metaNetwork.feedForward(inputs))
-			print("Decision:", self.decision, inputs)
+			#print("Decision:", self.decision, inputs)
 			#print()
 			if self.decision == 0:  # genetic
+				self.algorithmCount["genetic"] += 1
 				vision, visionBounds = searching.castRays(body[0], direction, environment, awareness["maxVision"])
 				self.nextDirection, self.nextMove = self.getNetworkDecision(body, direction, vision)
 				return {"visionBounds": visionBounds}
 			elif self.decision == 1:  # pathfind
+				self.algorithmCount["pathfind"] += 1
 				projected = set(self.path)
 				self.path = self.getPath(environment, body, "short")
 				if self.path:
@@ -314,6 +318,7 @@ class Hybrid(AI):
 					self.nextDirection, self.nextMove = self.getSafestMove(direction)
 				return {"path": projected, "openness": self.openness}
 			elif self.decision == 2:  # cycle
+				self.algorithmCount["cycle"] += 1
 				self.path = self.getCycle(body, environment)
 				if self.path:
 					self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
@@ -321,6 +326,7 @@ class Hybrid(AI):
 					self.nextDirection, self.nextMove = self.getSafestMove(direction)
 				return {"path": set(self.path)}
 			else:  # floodfill
+				self.algorithmCount["floodfill"] += 1
 				self.nextDirection, self.nextMove = self.getSafestMove(direction)
 				return {"openness": self.openness}
 		else:
@@ -331,6 +337,8 @@ class Hybrid(AI):
 		
 	def reset(self):
 		self.path = []
+		self.decision = None
+		self.algorithmCount = {"genetic": 0, "pathfind": 0, "cycle": 0, "floodfill": 0}
 		
 # FIX RECURSION DEPTH
 # DOUBLE CHECK STRAIGHT; (0, 1) or (0, -1)??

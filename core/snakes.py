@@ -236,7 +236,8 @@ class Snake:
 		"""
 		((snake_score)^3 * snake_age)/1000 + 1 if moved in all directions else 0
 		"""
-		return ((snake.score ** 2) / snake.age) / 1000 + 1 if all([p > 0 for p in snake.behavior.methodCount.values()]) else 0
+		# return ((snake.score ** 2) / snake.age) / 1000 + 1 if sum([p > 0 for p in snake.behavior.algorithmCount.values()]) > 2 else 0  # meta controller training
+		return ((snake.score ** 3) / snake.age) / 1000 + 1 if all([p > 0 for p in snake.moveCount.values()]) else 0  # neural network snake training
 	   
 	@staticmethod
 	def mergeTraits(child: object, parent1: object, parent2: object) -> None:

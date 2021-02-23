@@ -108,6 +108,7 @@ class Environment:
 			else:  # Snake moved into open space
 				self.gameMap[self.snake.prevTail] = EMPTY
 			self.snake.navigate(self.gameMap)
+			
 	def active(self) -> bool:
 		"""
 		Checks if game is over or not.

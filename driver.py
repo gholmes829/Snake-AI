@@ -177,79 +177,85 @@ class Driver:
 	def _trainAI(self) -> None:
 		"""Trains AI snakes. Saves data and models in ../dna folder. Creates new folder for each training session."""
 		# settings validation
-		#if settings.populationSize < 10:
-		#	print("\nError: Population size must be at least 10. Change size in settings.py.")
-		#	return
+		if settings.populationSize < 10:
+			print("\nError: Population size must be at least 10. Change size in settings.py.")
+			return
 
 		# initialize training parameters
 		population, generations = settings.populationSize, settings.generations
 
+		msg = "\nSelect training type:\n\t1) NN Controller\n\t2) Meta Controller\n\t3) Back"
+		trainingType = Driver.getValidInput(msg, dtype=int, valid={1, 2, 3})
 		
-		# EXPIRIMENTAL
+		if trainingType == 3:
+			return
+		elif trainingType == 2:
 		
-		trainedFiles = os.listdir(self.modelPath)
-		trainedFiles.remove("seeds")
-		numTrained = len(trainedFiles)
+			# EXPIRIMENTAL
+			print("META")  # delete
+			trainedFiles = os.listdir(self.modelPath)
+			trainedFiles.remove("seeds")
+			numTrained = len(trainedFiles)
 
-		index = 3
-		modelFile = trainedFiles[index]
+			modelFile = trainedFiles[3]  # hard coded to be king snek, fix later
 
-		data = np.load(os.path.join(self.modelPath, modelFile), allow_pickle=True)
-		color = tuple([int(value) for value in data["color"]])
+			data = np.load(os.path.join(self.modelPath, modelFile), allow_pickle=True)
+			color = tuple([int(value) for value in data["color"]])
 
-		behaviorKwargs = {
-			"weights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
-			"biases": [np.asarray(layer, dtype=float) for layer in data["biases"]],
-			"layers": settings.networkArchitecture,
-			"smartShield": settings.smartShield
-		}
-			
-		snakeKwargs = {
-			**settings.basicSnakeParams,
-			"hungerFunc": settings.hungerFunc,
-			"color": color
-		}
-		
-		initialPopulation = [snakes.Snake("hybrid", behaviorKwargs=behaviorKwargs, **snakeKwargs) for _ in range(population)]
-		
-		"""
-		seedFiles = os.listdir(self.seedPath)
-		numSeeds = len(seedFiles)
-		numSeeds = 0
-		print()
-		snakeParams = {
-			**settings.basicSnakeParams,
-			"hungerFunc": settings.hungerFunc
-		}
-		choice = Driver.getValidInput("Select population seed:\n\t1) Random\n\t2) Starter seeds\n\t3) Back", dtype=int, valid=range(1, 4))
-		if choice == 2 and numSeeds > 0:
-			initialPopulation = []
-			for modelFile in seedFiles[:-1]:
-				data = np.load(os.path.join(self.modelPath, modelFile), allow_pickle=True)
-				behaviorKwargs = {
-					"layers": settings.networkArchitecture,
-					"weights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
-					"biases": [np.asarray(layer, dtype=float) for layer in data["biases"]]
-				}
-
-				clone = snakes.Snake("neural network", behaviorKwargs=behaviorKwargs, **settings.snakeParams)
-				initialPopulation += [clone for _ in range(int(population/numSeeds)-1)] + [clone]
-			data = np.load(os.path.join(self.modelPath, seedFiles[-1]), allow_pickle=True)
 			behaviorKwargs = {
-				"layers": settings.networkArchitecture,
-				"weights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
-				"biases": [np.asarray(layer, dtype=float) for layer in data["biases"]]
+				"ctrlWeights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
+				"ctrlBiases": [np.asarray(layer, dtype=float) for layer in data["biases"]],
+				"ctrlLayers": settings.networkArchitecture,
+				"shielded": settings.smartShield
 			}
-			clone = snakes.Snake("neural network", behaviorKwargs=behaviorKwargs, **settings.snakeParams)
-			initialPopulation += [clone for _ in range(population-len(initialPopulation)-1)] + [clone] 
-		elif choice == 2 and numSeeds == 0:
-			print("\nNo starter seeds in .../trained/seeds/")
-			return
-		elif choice == 3:
-			return
+				
+			snakeKwargs = {
+				**settings.basicSnakeParams,
+				"hungerFunc": settings.hungerFunc,
+				"color": color
+			}
+			
+			initialPopulation = [snakes.Snake("hybrid", behaviorKwargs=behaviorKwargs, **snakeKwargs) for _ in range(population)]
+			
 		else:
-			initialPopulation = [snakes.Snake("neural network", behaviorKwargs={"layers": settings.networkArchitecture}, **snakeParams) for _ in range(population)]
-		"""
+			print("NN")  # delete
+			seedFiles = os.listdir(self.seedPath)
+			numSeeds = len(seedFiles)
+			#numSeeds = 0
+			print()
+			snakeParams = {
+				**settings.basicSnakeParams,
+				"hungerFunc": settings.hungerFunc
+			}
+			choice = Driver.getValidInput("Select population seed:\n\t1) Random\n\t2) Starter seeds\n\t3) Back", dtype=int, valid=range(1, 4))
+			if choice == 2 and numSeeds > 0:
+				initialPopulation = []
+				for modelFile in seedFiles[:-1]:
+					data = np.load(os.path.join(self.modelPath, modelFile), allow_pickle=True)
+					behaviorKwargs = {
+						"ctrlLayers": settings.networkArchitecture,
+						"ctrlWeights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
+						"ctrlBiases": [np.asarray(layer, dtype=float) for layer in data["biases"]]
+					}
+
+					clone = snakes.Snake("neural network", behaviorKwargs=behaviorKwargs, **settings.snakeParams)
+					initialPopulation += [clone for _ in range(int(population/numSeeds)-1)] + [clone]
+				data = np.load(os.path.join(self.modelPath, seedFiles[-1]), allow_pickle=True)
+				behaviorKwargs = {
+					"ctrlLayers": settings.networkArchitecture,
+					"ctrlWeights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
+					"ctrlBiases": [np.asarray(layer, dtype=float) for layer in data["biases"]]
+				}
+				clone = snakes.Snake("neural network", behaviorKwargs=behaviorKwargs, **settings.snakeParams)
+				initialPopulation += [clone for _ in range(population-len(initialPopulation)-1)] + [clone] 
+			elif choice == 2 and numSeeds == 0:
+				print("\nNo starter seeds in .../trained/seeds/")
+				return
+			elif choice == 3:
+				return
+			else:
+				initialPopulation = [snakes.Snake("neural network", behaviorKwargs={"ctrlLayers": settings.networkArchitecture}, **snakeParams) for _ in range(population)]
+		
 		task = game.playTrainingGame
 		colorCross = snakes.Snake.mergeTraits
 		snakeDNA = genetics.Genetics(initialPopulation, task, mergeTraits=None)
@@ -297,8 +303,9 @@ class Driver:
 			bestSnake = snakeDNA.generation["best"]["object"]
 			
 			# EXPIRIMENTAL
-			print(bestSnake.behavior.methodCount)
-			print(max(bestSnake.behavior.methodCount, key=bestSnake.behavior.methodCalls.get))
+			if trainingType == 2:  # delete
+				print(bestSnake.behavior.algorithmCount)
+				print(max(bestSnake.behavior.algorithmCount, key=bestSnake.behavior.algorithmCount.get))
 			
 			if settings.displayTraining:
 				game.playTrainingGame(bestSnake, render=False)  # best snake of gen plays game in GUI window
