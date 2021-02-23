@@ -26,7 +26,7 @@ __email__ = "g.holmes429@gmail.com"
 # BEHAVIOR FACTORY
 def getBehavior(behaviorType, *args, **kwargs):
 	return {
-		"hybrid": AI,
+		"hybrid": Hybrid,
 		"neural network": NeuralNetwork,
 		"pathfinder": Pathfinder,
 		"floodPathfinder": FloodPathfinder,
@@ -53,7 +53,7 @@ class Behavior:
 	def getBrain(self):
 		return {"type": "behavior"}
 		
-	def calcMoves(self, body, direction, awareness, environment):
+	def calcMoves(self, body, direction, awareness, environment, hunger):
 		return
 		
 	def reset(self):
@@ -115,7 +115,7 @@ class Manual(Behavior):
 
 		return newDirection, move
 		
-	def calcMoves(self, body, direction, awareness, environment):
+	def calcMoves(self, body, direction, awareness, environmen, hunger):
 		self.body = body
 		self.direction = direction
 
@@ -160,7 +160,7 @@ class Replay(Behavior):
 
 		return self.nextDirection, self.nextMove
 		
-	def calcMoves(self, body, direction, awareness, environment):
+	def calcMoves(self, body, direction, awareness, environment, hunger):
 		self.nextDirection = self.memories[self.t]
 		self.nextMove = self.getOrientedDirection(direction, newDirection, "global")
 		self.t += 1
@@ -169,7 +169,7 @@ class AI(Behavior):
 	def __init__(
 			self,
 			ctrlLayers=(14, 16, 3),
-			metaLayers=(6, 8, 5),
+			metaLayers=(6, 8, 4),
 			shielded=True,
 			ctrlWeights=None,
 			ctrlBiases=None,
@@ -180,9 +180,10 @@ class AI(Behavior):
 		self.dafaultOpenness = {(-1, 0): 0, (0, 1): 0, (1, 0): 0}
 		self.openness = self.dafaultOpenness.copy()
 		self.path = []
+		self.otherPaths = {}  # change this
 		self.ctrlNetwork = neural_nets.FFNN(ctrlLayers, weights=ctrlWeights, biases=ctrlBiases)
 		self.metaNetwork = neural_nets.FFNN(metaLayers, weights=metaWeights, biases=metaBiases)
-		self.shielded = True
+		self.shielded = shielded
 		self.nextDirection, self.nextMove = None, None
 
 	def getNetworkDecision(self, body, direction, vision):
@@ -208,7 +209,7 @@ class AI(Behavior):
 		
 	def getSafestMove(self, direction):
 		if sum(self.openness.values()) != 0:
-			nextMove = {0: (-1, 0), 1: (0, 1), 2: (1, 0)}[max(self.openness, key=self.openness.get)]
+			nextMove = max(self.openness, key=self.openness.get)  # simplify this?
 			nextDirection = self.getOrientedDirection(direction, nextMove, "local")
 		else:
 			nextDirection, nextMove = direction, (0, 1)  # straight
@@ -221,22 +222,25 @@ class AI(Behavior):
 				return searching.pathfind(environment, body[0], environment.filter(1)[0])[:-1]
 			else:  # length == "long"
 				return searching.longPathfind(environment, body[0], environment.filter(1)[0])[:-1]
+		else:
+			return self.path
 			
-	def getCycle(body, environment):
+	def getCycle(self, body, environment):
 		if not self.path:
 			if (initialPath := searching.longestPath(environment, body[0], body[-1], environment.filter(1)[0])[:-1]):
 				connection = body[:-1]
-				path = connection + initialPath
-		return path
+				return connection + initialPath
+		else:
+			return self.path
 			
 	def getMoveFromPath(self, body, direction):
 		if self.path:
 			moveTo = self.path.pop()
 			nextDirection = (moveTo[0] - body[0][0], moveTo[1] - body[0][1])
-			nextMove = self.getOrientedDirection(direction, newDirection, "global")
+			nextMove = self.getOrientedDirection(direction, nextDirection, "global")
 		else:
-			newDirection, nextMove = direction, (0, 1)
-		return newDirection, nextMove
+			nextDirection, nextMove = direction, (0, 1)
+		return nextDirection, nextMove
 		
 	@staticmethod
 	def smartShield(head, localDirection, lethalMoves):
@@ -246,68 +250,88 @@ class AI(Behavior):
 			localDirection = movesLeft.pop()
 	
 		return localDirection
+
+
+
+
 		
 # AI BEHAVIORS
 class NeuralNetwork(AI):
-	"""
-	Uses neural network to decide direction.
-
-	Attributes
-	----------
-	confidence: list
-		Log of 'confidence' of decisions
-	"""
 	def __init__(self, **kwargs) -> None:
-		"""
-		Initializes base class, instantiates FFNN with layer sizes.
-
-		Parameters
-		----------
-		layers: tuple, default=(24, 16, 3)
-			Neural network layer architecture
-		smartShield: bool, default=False
-			Determines whether dangerous moves can be overwritten
-			
-		**kwargs
-			Neural network super class parameters
-		"""
 		AI.__init__(self, **kwargs)
 
 	def getBrain(self):
 		return {"type": "neural network", "weights": self.network.weights, "biases": self.network.biases}
 
-	def calcMoves(self, body, direction, awareness, environment):
+	def calcMoves(self, body, direction, awareness, environment, hunger):
 		vision, visionBounds = searching.castRays(body[0], direction, environment, awareness["maxVision"])
 		self.nextDirection, self.nextMove = self.getNetworkDecision(body, direction, vision)
 		return {"visionBounds": visionBounds}
 		
 	def __call__(self) -> tuple:
-		"""
-		Provides direction by feeding vision to neural network.
+		return self.nextDirection, self.nextMove
 
-		Parameters
-		----------
-		vision: np.array
-			Describes closeness of Snake's head to food, body, and wall
-		direction: tuple
-			Current global direction Snake is facing
+class Hybrid(AI):
+	def __init__(self, **kwargs) -> None:
+		AI.__init__(self, **kwargs)
+		self.decision = None
 
-		Returns
-		-------
-		tuple: (new global direction, move necessary to have Snake oriented to this direction)
-		"""
+	def getBrain(self):
+		return {"type": "neural network", "weights": self.metaNetwork.weights, "biases": self.metaNetwork.biases}
 
-		#move = {0: "left", 1: "straight", 2: "right"}[decision] 
-		 
+	def calcMoves(self, body, direction, awareness, environment, hunger):
+		if self.decision in {0, 3} or not self.path:
+			#print("Calculating")
+			relativeSize = len(body) / environment.area
+			#print("Finding openness...")
+			self.openness = self.getOpenness(body, direction, environment)
+			#print(self.openness[max(self.openness)])
+			relativeSpace = self.openness[max(self.openness)] / environment.area
+			foodCloseness = 1 / searching.dist(body[0], environment.filter(1)[0])
+			#print("Finding short path...")
+			short = searching.pathfind(environment, body[0], environment.filter(1)[0])
+			#print("Finding cycle path...")
+			cycle = body[:-1] + searching.longestPath(environment, body[0], body[-1], environment.filter(1)[0], path=short)[:-1]
+			self.otherPaths["short"] = short[:-1]
+			self.otherPaths["cycle"] = cycle
+			relativeHunger = hunger/awareness["maxHunger"]
+			
+			inputs = np.array([relativeSize, relativeSpace, foodCloseness, int(bool(short)), int(bool(cycle)), relativeHunger])
+			#print("Making decision with inputs:", inputs)
+			self.decision = np.argmax(self.metaNetwork.feedForward(inputs))
+			print("Decision:", self.decision, inputs)
+			#print()
+			if self.decision == 0:  # genetic
+				vision, visionBounds = searching.castRays(body[0], direction, environment, awareness["maxVision"])
+				self.nextDirection, self.nextMove = self.getNetworkDecision(body, direction, vision)
+				return {"visionBounds": visionBounds}
+			elif self.decision == 1:  # pathfind
+				projected = set(self.path)
+				self.path = self.getPath(environment, body, "short")
+				if self.path:
+					self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
+				else:
+					self.nextDirection, self.nextMove = self.getSafestMove(direction)
+				return {"path": projected, "openness": self.openness}
+			elif self.decision == 2:  # cycle
+				self.path = self.getCycle(body, environment)
+				if self.path:
+					self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
+				else:
+					self.nextDirection, self.nextMove = self.getSafestMove(direction)
+				return {"path": set(self.path)}
+			else:  # floodfill
+				self.nextDirection, self.nextMove = self.getSafestMove(direction)
+				return {"openness": self.openness}
+		else:
+			self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
+		
+	def __call__(self) -> tuple:
 		return self.nextDirection, self.nextMove
 		
+	def reset(self):
+		self.path = []
 		
-# MOVE STUFF LIKE OPENESS AND PATH INTO AI BASE
-# ...WHICH ALLOWS STATIC METHODS TO BE CONVERTED TO SELF METHODS
-# MAYBE MAKE AI ABLE TO WORK ALONE, USE STR ARGS TO SPECIFY BEHAVIOR TYPE? MIGHT MAKE HYBRID EASIER AT SAME TIME
-# MIGRATE HAMILTONIAN AND FLOOD PATHFINDER
-# MAKE HYBRID
-# TEST
 # FIX RECURSION DEPTH
 # DOUBLE CHECK STRAIGHT; (0, 1) or (0, -1)??
 # TEST TRAINING
@@ -321,10 +345,11 @@ class Pathfinder(AI):
 	def __init__(self):
 		AI.__init__(self)
 		
-	def calcMoves(self, body, direction, awareness, environment):
+	def calcMoves(self, body, direction, awareness, environment, hunger):
+		projected = set(self.path)
 		self.path = self.getPath(environment, body, "short")
-		self.nextDirection, self.nextMove = getMoveFromPath(self.path, body, direction)
-		return {"path": set(self.path)}
+		self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
+		return {"path": projected}
 
 	def __call__(self):
 		return self.nextDirection, self.nextMove
@@ -333,10 +358,11 @@ class LongPathfinder(AI):
 	def __init__(self):
 		AI.__init__(self)
 		
-	def calcMoves(self, body, direction, awareness, environment):
+	def calcMoves(self, body, direction, awareness, environment, hunger):
+		projected = set(self.path)
 		self.path = self.getPath(environment, body, "long")
-		self.nextDirection, self.nextMove = getMoveFromPath(self.path, body, direction)
-		return {"path": set(self.path)}
+		self.nextDirection, self.nextMove = getMoveFromPath(body, direction)
+		return {"path": projected}
 
 	def __call__(self):
 		return self.nextDirection, self.nextMove
@@ -346,10 +372,10 @@ class Hamiltonian(AI):
 	def __init__(self):
 		AI.__init__(self)
 		
-	def calcMoves(self, body, direction, awareness, environment):
+	def calcMoves(self, body, direction, awareness, environment, hunger):
 		self.path = self.getCycle(body, environment)
 		if self.path:
-			self.nextDirection, self.nextMove = getMoveFromPath(self.path, body, direction)
+			self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
 		else:
 			self.nextDirection, self.nextMove = self.getSafestMove(direction)
 		return {"path": set(self.path)}
@@ -362,13 +388,15 @@ class FloodPathfinder(AI):
 	def __init__(self):
 		AI.__init__(self)
 		
-	def calcMoves(self, body, direction, awareness, environment):
+	def calcMoves(self, body, direction, awareness, environment, hunger):
+		projected = set(self.path)
 		self.path = self.getPath(environment, body, "short")
 		if self.path:
-			self.nextDirection, self.nextMove = getMoveFromPath(self.path, body, direction)
+			self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
 		else:
+			self.openness = self.getOpenness(body, direction, environment)
 			self.nextDirection, self.nextMove = self.getSafestMove(direction)
-		return {"path": set(self.path), "openness": self.openness}
+		return {"path": projected, "openness": self.openness}
 
 	def __call__(self):
 		return self.nextDirection, self.nextMove
@@ -377,7 +405,7 @@ class FloodFill(AI):
 	def __init__(self):
 		AI.__init__(self)
 		
-	def calcMoves(self, body, direction, awareness, environment):
+	def calcMoves(self, body, direction, awareness, environment, hunger):
 		self.openness = self.getOpenness(body, direction, environment)
 		self.nextDirection, self.nextMove = self.getSafestMove(direction)
 		return {"openness": self.openness}

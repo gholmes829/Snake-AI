@@ -166,7 +166,7 @@ class Snake:
 		self.hunger = 0
 		
 	def navigate(self, environment):
-		if (observed := self.behavior.calcMoves(self.body.copy(), deepcopy(self.direction), self.awareness, deepcopy(environment)))is not None:
+		if (observed := self.behavior.calcMoves(self.body.copy(), deepcopy(self.direction), self.awareness, deepcopy(environment), self.hunger)) is not None:
 			self.awareness.update(observed)
 		
 	def setReference(self, origin: tuple) -> None:
@@ -214,6 +214,7 @@ class Snake:
 		self.awareness = {
 			"maxVision": self.awareness["maxVision"],
 			"visionBounds": [],
+			"maxHunger": self.starvation,
 			"path": [],
 			"open": {(-1, 0): 0, (0, -1): 0, (1, 0): 0}
 		}

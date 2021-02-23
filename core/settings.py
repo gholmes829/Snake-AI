@@ -29,7 +29,7 @@ b = perimeter + offset
 gridColors = ("lightBlue", "mediumBlue", "mediumBlue")  # color of GUI window background
 
 # FPS AND DISPLAY
-targetFPS = 60
+targetFPS = 120
 smoothness = 3  # controls how fast and smooth animations run
 
 # GENETICS
@@ -43,7 +43,7 @@ maxSnakeVision = max(mapSize)  # how far rays are cast
 
 def hungerFunc(size):
 	#return 1000
-    return min(a * (size**order) + b, mapSize[0] * mapSize[1])
+    return min(a * (size**order) + b, mapSize[0] * mapSize[1]) + 1000
 
 basicSnakeParams = {
     "initialSize": initialSnakeSize,

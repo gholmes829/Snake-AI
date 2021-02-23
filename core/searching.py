@@ -185,7 +185,7 @@ def pathfind(space, origin, target, impassable=-1) -> list:
 	
 	
 
-def longPathHelper(space, path, i, pickup, depth, impassable=-1, corner=True, maxDepth=3):
+def longPathHelper(space, path, i, pickup, depth, impassable=-1, corner=True):
 	#print("New fork:", i)
 	allPaths = []
 	incremented = False
@@ -199,13 +199,13 @@ def longPathHelper(space, path, i, pickup, depth, impassable=-1, corner=True, ma
 		direction1 = (next[0] - curr[0], next[1] - curr[1])
 		direction2 = (third[0] - next[0], third[1] - next[1])
 		#print("State:", curr, next, third, direction1)
-		if depth < maxDepth and (corner or incremented) and all((direction1[0] + direction2[0], direction1[1] + direction2[1])):
+		if depth and (corner or incremented) and all((direction1[0] + direction2[0], direction1[1] + direction2[1])):
 			new = (curr[0] + direction2[0], curr[1] + direction2[1])
 			if new in space and new not in path and space[new] != impassable:
 				#print("Replacing corner, forking", curr, next, third)
 				copy = path.copy()
 				copy[i + 1] = new
-				allPaths.append(longPathHelper(space, copy, i, pickup, depth + 1, corner=False))
+				allPaths.append(longPathHelper(space, copy, i, pickup, depth-1, corner=False))
 
 		turns = ((direction1[1], -direction1[0]), (-direction1[1], direction1[0]))
 		for ti, turn in enumerate(turns):
@@ -219,14 +219,14 @@ def longPathHelper(space, path, i, pickup, depth, impassable=-1, corner=True, ma
 					fork = True
 				break
 		
-		if fork and depth < maxDepth:
+		if fork and depth:
 			extension1, extension2 = (curr[0] + turns[1][0], curr[1] + turns[1][1]), (next[0] + turns[1][0], next[1] + turns[1][1])
 			if extension1 in space and extension2 in space and extension1 not in path and extension2 not in path and space[extension1] != impassable and space[extension2] != impassable:
 				#print("Multiple options, FORKING")
 				copy = path.copy()
 				copy[i + 1] = extension1
 				copy[i + 2] = extension2
-				allPaths.append(longPathHelper(space, copy, i, pickup, depth + 1))
+				allPaths.append(longPathHelper(space, copy, i, pickup, depth - 1))
 		incremented = True	
 			
 		if not extended:
@@ -248,13 +248,13 @@ def longPathHelper(space, path, i, pickup, depth, impassable=-1, corner=True, ma
 		fork = False
 		#print("State:", curr, next, direction1)
 		
-		if cornerPossible and depth < maxDepth and (corner or incremented) and all((direction1[0] + direction2[0], direction1[1] + direction2[1])):
+		if cornerPossible and depth and (corner or incremented) and all((direction1[0] + direction2[0], direction1[1] + direction2[1])):
 			new = (curr[0] + direction2[0], curr[1] + direction2[1])
 			if new in space and new not in path and space[new] != impassable:
 				#print("Replacing corner, forking", curr, next, third)
 				copy = path.copy()
 				copy[i + 1] = new
-				allPaths.append(longPathHelper(space, copy, i, pickup, depth + 1, corner=False))
+				allPaths.append(longPathHelper(space, copy, i, pickup, depth - 1, corner=False))
 		
 		turns = ((direction1[1], -direction1[0]), (-direction1[1], direction1[0]))
 		for ti, turn in enumerate(turns):
@@ -268,13 +268,13 @@ def longPathHelper(space, path, i, pickup, depth, impassable=-1, corner=True, ma
 					fork = True
 				break
 		
-		if fork and depth < maxDepth:
+		if fork and depth:
 			extension1, extension2 = (curr[0] + turns[1][0], curr[1] + turns[1][1]), (next[0] + turns[1][0], next[1] + turns[1][1])
 			if extension1 in space and extension2 in space and extension1 not in path and extension2 not in path and space[extension1] != impassable and space[extension2] != impassable:
 				copy = path.copy()
 				copy.insert(i + 1, extension1)
 				copy.insert(i + 2, extension2)
-				allPaths.append(longPathHelper(space, copy, i, pickup, depth + 1))
+				allPaths.append(longPathHelper(space, copy, i, pickup, depth - 1))
 		incremented = True
 		if not extended:
 			#print("Incrementing", i, i+1)
@@ -292,17 +292,18 @@ def longPathHelper(space, path, i, pickup, depth, impassable=-1, corner=True, ma
 	return bestPath
 	
 	
-def longestPath(space, origin, target, pickup, impassable=-1, maxDepth=3) -> list:
-	path = pathfind(space, origin, target, impassable=impassable)
+def longestPath(space, origin, target, pickup, impassable=-1, depth=2, path = None) -> list:
+	if path is None:
+		path = pathfind(space, origin, target, impassable=impassable)
 	if not path:
 		return []
 	#print("Origin, target:", origin, target)
 	#print(space)
 	#space[target] = -1
 	#print("A* Short path", path)
-	longPath = longPathHelper(space, path.copy(), 0, pickup, 0, impassable=impassable, maxDepth=maxDepth)
+	longPath = longPathHelper(space, path.copy(), 0, pickup, depth, impassable=impassable)
 	#print("Longest path", longPath, len(longPath))
-	return longPath
+	return longPath  # refactor this
 			
 			
 			
