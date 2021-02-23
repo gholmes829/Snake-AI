@@ -189,7 +189,7 @@ class Genetics:
         self.pool.close()
         self.pool.join()
 		
-    def _evaluate(self, population: list, parallelize: bool = True) -> list:
+    def _evaluate(self, population: list, parallelize: bool = False) -> list:
         """
         Uses multi-core parallel processing to evaluate performance of each member in population.
 
@@ -228,7 +228,7 @@ class Genetics:
 
         return members
 
-    def _makePopulation(self, population: list, parallelize: bool = True) -> list:
+    def _makePopulation(self, population: list, parallelize: bool = False) -> list:
         """
         Uses multi-core parallel processing to generate population for generation.
 

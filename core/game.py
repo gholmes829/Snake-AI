@@ -21,6 +21,8 @@ __author__ = "Grant Holmes"
 __email__ = "g.holmes429@gmail.com"
 
 
+# consider adding try excecpt block to ensure engine always exits
+
 def playGame(environment: environments.Environment, render: bool = True) -> None:
     """
     Allows game to be played, calls appropriate sub function.
@@ -49,6 +51,7 @@ def playTrainingGame(snake: snakes.Snake, render: bool = False) -> dict:
     render: bool, default=True
         Indicates if game should be rendered to GUI window
     """
+    print("New Game")
     environment = environments.Environment(snake, settings.mapSize)
     playGame(environment, render=render)
     return {"fitness": snakes.Snake.fitness(snake),  "score": snake.score}

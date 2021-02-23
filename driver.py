@@ -104,10 +104,10 @@ class Driver:
             color = tuple([int(value) for value in data["color"]])
 
             behaviorKwargs = {
-                "weights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
-                "biases": [np.asarray(layer, dtype=float) for layer in data["biases"]],
-                "layers": settings.networkArchitecture,
-                "smartShield": settings.smartShield
+                "ctrlWeights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
+                "ctrlBiases": [np.asarray(layer, dtype=float) for layer in data["biases"]],
+                "ctrlLayers": settings.networkArchitecture,
+                "shielded": settings.smartShield
             }
             
             snakeKwargs = {
@@ -115,13 +115,15 @@ class Driver:
                 "hungerFunc": settings.hungerFunc,
                 "color": color
             }
-            snake = snakes.Snake("cycle", **snakeKwargs)
+            #snake = snakes.Snake("hybrid", behaviorKwargs=behaviorKwargs, **snakeKwargs)
+            #snake = snakes.Snake("cycle", **snakeKwargs)
             #snake = snakes.Snake("floodPathfinder", **snakeKwargs) 
             #snake = snakes.Snake("floodfill", **snakeKwargs) 
             #snake = snakes.Snake("pathfinder", **snakeKwargs)            
-            #snake = snakes.Snake("neural network", behaviorKwargs=behaviorKwargs, **snakeKwargs)
+            snake = snakes.Snake("neural network", behaviorKwargs=behaviorKwargs, **snakeKwargs)
             self.environment = environments.Environment(snake, settings.mapSize, origin=(3, 0))
-            game.playGame(self.environment, render=True)
+            game.playGame(self.environment, render=False)
+            print(snake.size)
             self._checkSave()
 
     def _checkSave(self) -> None:
@@ -150,13 +152,42 @@ class Driver:
     def _trainAI(self) -> None:
         """Trains AI snakes. Saves data and models in ../dna folder. Creates new folder for each training session."""
         # settings validation
-        if settings.populationSize < 10:
-            print("\nError: Population size must be at least 10. Change size in settings.py.")
-            return
+        #if settings.populationSize < 10:
+        #    print("\nError: Population size must be at least 10. Change size in settings.py.")
+        #    return
 
         # initialize training parameters
         population, generations = settings.populationSize, settings.generations
 
+		
+		# EXPIRIMENTAL
+		
+        trainedFiles = os.listdir(self.modelPath)
+        trainedFiles.remove("seeds")
+        numTrained = len(trainedFiles)
+
+        index = 3
+        modelFile = trainedFiles[index]
+
+        data = np.load(os.path.join(self.modelPath, modelFile), allow_pickle=True)
+        color = tuple([int(value) for value in data["color"]])
+
+        behaviorKwargs = {
+            "weights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
+            "biases": [np.asarray(layer, dtype=float) for layer in data["biases"]],
+            "layers": settings.networkArchitecture,
+            "smartShield": settings.smartShield
+        }
+            
+        snakeKwargs = {
+            **settings.basicSnakeParams,
+            "hungerFunc": settings.hungerFunc,
+            "color": color
+        }
+        
+        initialPopulation = [snakes.Snake("hybrid", behaviorKwargs=behaviorKwargs, **snakeKwargs) for _ in range(population)]
+		
+        """
         seedFiles = os.listdir(self.seedPath)
         numSeeds = len(seedFiles)
         numSeeds = 0
@@ -193,7 +224,7 @@ class Driver:
             return
         else:
             initialPopulation = [snakes.Snake("neural network", behaviorKwargs={"layers": settings.networkArchitecture}, **snakeParams) for _ in range(population)]
-		
+        """
         task = game.playTrainingGame
         colorCross = snakes.Snake.mergeTraits
         snakeDNA = genetics.Genetics(initialPopulation, task, mergeTraits=None)
@@ -239,9 +270,13 @@ class Driver:
             print("    Total time elapsed:", totalTime)
             print("    Time of day:", currentTime)
             bestSnake = snakeDNA.generation["best"]["object"]
+			
+            # EXPIRIMENTAL
+            print(bestSnake.behavior.methodCount)
+            print(max(bestSnake.behavior.methodCount, key=bestSnake.behavior.methodCalls.get))
             
             if settings.displayTraining:
-                game.playTrainingGame(bestSnake, render=True)  # best snake of gen plays game in GUI window
+                game.playTrainingGame(bestSnake, render=False)  # best snake of gen plays game in GUI window
 
             # save data of generation to .../dna/evolution_x/generation_y/analytics.json
             generationPath = os.path.join(evolutionPath, "generation_" + str(gen))

@@ -16,25 +16,25 @@ title = "Snake AI"
 
 # SCREEN AND MAP
 screenSize = (600, 600)
-mapSize = (15, 15)
+mapSize = (12, 12)
 area = mapSize[0] * mapSize[1]
 order = 3
 
 areaParam = area**order
 perimeter = 2 * (mapSize[0] + mapSize[1])
-coefficient, offset = 10, 225
+coefficient, offset = 12, 50
 a = coefficient * ((area-perimeter)/areaParam)
 b = perimeter + offset
 
 gridColors = ("lightBlue", "mediumBlue", "mediumBlue")  # color of GUI window background
 
 # FPS AND DISPLAY
-targetFPS = 144
-smoothness = 2  # controls how fast and smooth animations run
+targetFPS = 60
+smoothness = 3  # controls how fast and smooth animations run
 
 # GENETICS
-populationSize = 500
-generations = 2500
+populationSize = 20
+generations = 1000
 displayTraining = False  # displays best snake after each generation during training
 
 # SNAKE
@@ -42,8 +42,8 @@ initialSnakeSize = 4
 maxSnakeVision = max(mapSize)  # how far rays are cast
 
 def hungerFunc(size):
-	return 1000
-    #return min(a * (size**order) + b, mapSize[0] * mapSize[1])
+	#return 1000
+    return min(a * (size**order) + b, mapSize[0] * mapSize[1])
 
 basicSnakeParams = {
     "initialSize": initialSnakeSize,
