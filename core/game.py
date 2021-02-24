@@ -51,7 +51,7 @@ def playTrainingGame(snake: snakes.Snake, render: bool = False) -> dict:
 	render: bool, default=True
 		Indicates if game should be rendered to GUI window
 	"""
-	print("NEW GAME" + "!" * 20)
+	#print("NEW GAME" + "!" * 20)  # delete
 	environment = environments.Environment(snake, settings.mapSize)
 	playGame(environment, render=render)
 	return {"fitness": snakes.Snake.fitness(snake),  "score": snake.score}

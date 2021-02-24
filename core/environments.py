@@ -233,6 +233,7 @@ class Map(dict):
 		output = ""
 		for j in range(-1, self.size[1] + 1):
 			for i in range(-1, self.size[0] + 1):
-				output += str(self[(i, j)])
+				next = "x" if self[(i, j)] == -1 else " " if self[(i, j)] == 0 else self[(i, j)]
+				output += str(next)
 			output += "\n"
 		return output

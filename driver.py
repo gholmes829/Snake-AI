@@ -140,7 +140,7 @@ class Driver:
 		print()
 		for i in range(games):
 			self.environment = environments.Environment(snake, settings.mapSize, origin=(3, 0))
-			game.playGame(self.environment, render=False)
+			game.playGame(self.environment, render=False and not (games-1))
 			scores.append(snake.size)
 			print("Final snake size for game", str(i+1) + ":", snake.size)
 
@@ -303,9 +303,9 @@ class Driver:
 			bestSnake = snakeDNA.generation["best"]["object"]
 			
 			# EXPIRIMENTAL
-			if trainingType == 2:  # delete
-				print(bestSnake.behavior.algorithmCount)
-				print(max(bestSnake.behavior.algorithmCount, key=bestSnake.behavior.algorithmCount.get))
+			#if trainingType == 2:  # delete
+				#print(bestSnake.behavior.algorithmCount)
+				#print(max(bestSnake.behavior.algorithmCount, key=bestSnake.behavior.algorithmCount.get))
 			
 			if settings.displayTraining:
 				game.playTrainingGame(bestSnake, render=False)  # best snake of gen plays game in GUI window
@@ -322,10 +322,17 @@ class Driver:
 			# saves neural net of best snake from generation to .../dna/evolution_x/generation_y/model.npz
 			modelPath = os.path.join(generationPath, "model.npz")
 			model = bestSnake.getBrain()
+			#print(len(model["weights"]))
+			#for l in model["weights"]:
+				#print(l.shape)
+			weights = np.array(model["weights"], dtype=object)
+			biases = np.array(model["biases"], dtype=object)
+			#print(weights.shape)
+			#print(biases.shape)
 			np.savez(
 				modelPath,
-				weights=np.array(model["weights"], dtype=object),
-				biases=np.array(model["biases"], dtype=object),
+				weights=weights,
+				biases=biases,
 				color=np.array(bestSnake.color)
 			)
 			print()
