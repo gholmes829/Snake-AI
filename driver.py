@@ -192,7 +192,7 @@ class Driver:
 		elif trainingType == 2:
 		
 			# EXPIRIMENTAL
-			print("META")  # delete
+			#print("META")  # delete
 			trainedFiles = os.listdir(self.modelPath)
 			trainedFiles.remove("seeds")
 			numTrained = len(trainedFiles)
@@ -218,7 +218,7 @@ class Driver:
 			initialPopulation = [snakes.Snake("hybrid", behaviorKwargs=behaviorKwargs, **snakeKwargs) for _ in range(population)]
 			
 		else:
-			print("NN")  # delete
+			#print("NN")  # delete
 			seedFiles = os.listdir(self.seedPath)
 			numSeeds = len(seedFiles)
 			#numSeeds = 0
@@ -273,7 +273,7 @@ class Driver:
 		data = {
 			"evolution": currEvolution,
 			"settings": settings.getDictInfo(),
-			"fitness": snakes.Snake.fitness.__doc__[9:-9],
+			"fitness": initialPopulation[0].fitness.__doc__[9:-9],
 			"architecture": settings.networkArchitecture
 		}
 

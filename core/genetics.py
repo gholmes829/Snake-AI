@@ -189,7 +189,7 @@ class Genetics:
         self.pool.close()
         self.pool.join()
 		
-    def _evaluate(self, population: list, parallelize: bool = False) -> list:
+    def _evaluate(self, population: list, parallelize: bool = True) -> list:
         """
         Uses multi-core parallel processing to evaluate performance of each member in population.
 
@@ -212,12 +212,12 @@ class Genetics:
             except KeyboardInterrupt:
                 print("Recieved keyboard interrupt signal. Exiting!")
                 sys.exit()
-            #except Exception as e:  # failures with process serialization and synchronization
-            #    print("EXCEPTION:", e)
-            #    print()
-            #    currentTime = datetime.now().strftime("%H:%M:%S")
-            #    print("WARNING: An exception during parallelized evaluation has occured at " + currentTime + ". Attempting to restart evaluation without parallelization.\n")
-            #    return self._evaluate(population, parallelize=False)
+            except Exception as e:  # failures with process serialization and synchronization
+                print("EXCEPTION:", e)
+                print()
+                currentTime = datetime.now().strftime("%H:%M:%S")
+                print("WARNING: An exception during parallelized evaluation has occured at " + currentTime + ". Attempting to restart evaluation without parallelization.\n")
+                return self._evaluate(population, parallelize=False)
         else:
             trials = [[self.task(member) for member in population] for _ in range(self.trials)]  # non parallelized
 		

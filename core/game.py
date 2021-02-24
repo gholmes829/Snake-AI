@@ -54,7 +54,7 @@ def playTrainingGame(snake: snakes.Snake, render: bool = False) -> dict:
 	#print("NEW GAME" + "!" * 20)  # delete
 	environment = environments.Environment(snake, settings.mapSize)
 	playGame(environment, render=render)
-	return {"fitness": snakes.Snake.fitness(snake),  "score": snake.score}
+	return {"fitness": snake.fitness(snake),  "score": snake.score}
 	
 	
 def playPlayerGame(environment: environments.Environment, spaceStart: bool = True) -> None:

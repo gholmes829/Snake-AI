@@ -103,6 +103,11 @@ class Snake:
 		behaviorArgs = [] if behaviorArgs is None else behaviorArgs  
 		behaviorKwargs = {} if behaviorKwargs is None else behaviorKwargs
 		
+		if behaviorType == "neural network":
+			self.fitness = self.controllerFitness
+		else:
+			self.fitness = self.metaFitness
+		
 		self.behavior = behaviors.getBehavior(behaviorType, *behaviorArgs, **behaviorKwargs)
  
 		self.initialSize = initialSize
@@ -232,12 +237,18 @@ class Snake:
 	#	return ((snake.score ** 3) * snake.age) / 1000 + 1 if all([p > 0 for p in snake.moveCount.values()]) else 0
 		
 	@staticmethod
-	def fitness(snake) -> None:
+	def metaFitness(snake) -> None:
+		"""Testing..."""
+		score = ((snake.score ** 3) * snake.age) / 1000 + 1 if sum([p > 0 for p in snake.behavior.algorithmCount.values()]) > 1 else 0
+		#print(snake.behavior.algorithmCount, score)
+		return score  # meta controller training
+	
+	@staticmethod
+	def controllerFitness(snake) -> None:
 		"""
 		((snake_score)^3 * snake_age)/1000 + 1 if moved in all directions else 0
 		"""
-		return ((snake.score ** 2) / snake.age) / 1000 + 1 if sum([p > 0 for p in snake.behavior.algorithmCount.values()]) >= 2 else 0  # meta controller training
-		# return ((snake.score ** 3) * snake.age) / 1000 + 1 if all([p > 0 for p in snake.moveCount.values()]) else 0  # neural network snake training
+		return ((snake.score ** 3) * snake.age) / 1000 + 1 if all([p > 0 for p in snake.moveCount.values()]) else 0  # neural network snake training
 	   
 	@staticmethod
 	def mergeTraits(child: object, parent1: object, parent2: object) -> None:

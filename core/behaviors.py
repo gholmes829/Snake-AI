@@ -59,6 +59,9 @@ class Behavior:
 	def reset(self):
 		return
 		
+	def getInfo(self):
+		return ""
+		
 	@staticmethod
 	def getOrientedDirection(currDirection, newDirection, directionType) -> tuple:
 		if not (abs(newDirection[0]) ^ abs(newDirection[1]) and abs(sum(newDirection)) == 1):
@@ -169,7 +172,7 @@ class AI(Behavior):
 	def __init__(
 			self,
 			ctrlLayers=(24, 16, 3),
-			metaLayers=(6, 8, 2),
+			metaLayers=(13, 10, 5),
 			shielded=True,
 			ctrlWeights=None,
 			ctrlBiases=None,
@@ -241,15 +244,15 @@ class AI(Behavior):
 						print("Short path", searching.pathfind(environment, body[0], body[-1], impassable=impassable))
 						raise AssertionError("Connection has holes", connection)
 				"""
-				for i in range(len(initialPath) - 1):
-					first = initialPath[i]
-					second = initialPath[i+1]
-					diff = (second[0]-first[0], second[1]-first[1])
-					if diff not in {(1, 0), (-1, 0), (0, 1), (0, -1)}:
-						print("Hole", i, first, second, diff)
-						print("Body", body)
-						print("Short path", searching.pathfind(environment, body[0], body[-1]))
-						raise AssertionError("initialPath has holes", initialPath)
+				#for i in range(len(initialPath) - 1):
+				#	first = initialPath[i]
+				#	second = initialPath[i+1]
+				#	diff = (second[0]-first[0], second[1]-first[1])
+				#	if diff not in {(1, 0), (-1, 0), (0, 1), (0, -1)}:
+				#		print("Hole", i, first, second, diff)
+				#		print("Body", body)
+				#		print("Short path", searching.pathfind(environment, body[0], body[-1]))
+				#		raise AssertionError("initialPath has holes", initialPath)
 				"""
 				for i in range(len(full) - 1):
 					first = full[i]
@@ -323,7 +326,7 @@ class Hybrid(AI):
 		self.decision = None
 		self.prevDecision = None
 		self.fullPath = None
-		self.algorithmCount = {"genetic": 0, "pathfind": 0, "cycle": 0, "floodfill": 0}
+		self.algorithmCount = {"genetic": 0, "pathfind": 0, "longPathfind": 0, "cycle": 0, "floodfill": 0}
 		
 
 	def getBrain(self):
@@ -336,14 +339,36 @@ class Hybrid(AI):
 			relativeSize = len(body) / environment.area
 			#print("Finding openness...")
 			self.openness = self.getOpenness(body, direction, environment)
+			food = environment.filter(1)[0]
 			#print(self.openness[max(self.openness)])
-			relativeSpace = self.openness[max(self.openness)] / environment.area
-			foodCloseness = 1 / searching.dist(body[0], environment.filter(1)[0])
+			#relativeSpace = self.openness[max(self.openness)] / environment.area
+			foodCloseness = 1 / searching.dist(body[0], food)
 			tailCloseness = 1 / searching.dist(body[0], body[-1])
 			if (center := (int(environment.size[0]/2), int(environment.size[1]/2))) != body[0]:
 				centerCloseness = 1 / searching.dist(body[0], center)
 			else:
 				centerCloseness = 1
+			
+			# danger as openness
+			left = self.openness[-1, 0]
+			forward = self.openness[0, 1]
+			right = self.openness[1, 0]
+			
+			# wall dist
+			wallUp = 1 / body[0][1]
+			wallRight = 1 / environment.size[0] - body[0][0]
+			wallDown = 1 / environment.size[1] - body[0][1]
+			wallLeft = 1 / body[0][0]
+			
+			# food moves
+			dx = abs(food[0] - body[0][0])
+			dy = abs(food[1] - body[0][1])
+			relativeMovements = (dx + dy) / (sum(environment.size))
+			
+			#up = environment[(body[0][0], body[0][1] - 1)] == -1
+			#left = environment[(body[0][0] - 1, body[0][1])] == -1
+			#right = environment[(body[0][0] + 1, body[0][1])] == -1
+			
 			#print("Finding short path...")
 			#short = searching.pathfind(environment, body[0], body[-1])
 			#print("Finding cycle path...")
@@ -359,7 +384,7 @@ class Hybrid(AI):
 			relativeHunger = hunger/awareness["maxHunger"]
 			
 			#inputs = np.array([relativeSize, relativeSpace, foodCloseness, int(bool(short)), int(bool(cycle)), relativeHunger])
-			inputs = np.array([relativeSize, relativeSpace, foodCloseness, tailCloseness, centerCloseness, relativeHunger])
+			inputs = np.array([relativeSize, foodCloseness, tailCloseness, centerCloseness, relativeHunger, relativeMovements, forward, left, right, wallUp, wallRight, wallDown, wallLeft])
 			#print("Making decision with inputs:", inputs)
 			self.decision = np.argmax(self.metaNetwork.feedForward(inputs))
 			#if self.decision != self.prevDecision and self.prevDecision is not None:
@@ -373,11 +398,11 @@ class Hybrid(AI):
 				vision, visionBounds = searching.castRays(body[0], direction, environment, awareness["maxVision"])
 				self.nextDirection, self.nextMove = self.getNetworkDecision(body, direction, vision)
 				return {"visionBounds": visionBounds}
-			elif self.decision == 2:  # pathfind
+			elif self.decision == 1:  # pathfind
 				self.algorithmCount["pathfind"] += 1
 				projected = set(self.path)
 				self.path = self.getPath(environment, body, "short")
-				self.fullPath = self.path.copy()
+				#self.fullPath = self.path.copy()
 				#self.path = self.otherPaths["short"]
 				if self.path:
 					self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
@@ -385,11 +410,23 @@ class Hybrid(AI):
 					#self.openness = self.getOpenness(body, direction, environment)
 					self.nextDirection, self.nextMove = self.getSafestMove(direction)
 				return {"path": projected, "openness": self.openness}
-			elif self.decision == 1:  # cycle
+			elif self.decision == 2:  # long pathfind
+				self.algorithmCount["longPathfind"] += 1
+				projected = set(self.path)
+				self.path = self.getPath(environment, body, "long")
+				#self.fullPath = self.path.copy()
+				#self.path = self.otherPaths["short"]
+				if self.path:
+					self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
+				else:
+					#self.openness = self.getOpenness(body, direction, environment)
+					self.nextDirection, self.nextMove = self.getSafestMove(direction)
+				return {"path": projected, "openness": self.openness}
+			elif self.decision == 3:  # cycle
 				self.algorithmCount["cycle"] += 1
 				#projected = set(self.path)
 				self.path = self.getCycle(body, environment)
-				self.fullPath = self.path.copy()
+				#self.fullPath = self.path.copy()
 				#self.path = self.otherPaths["cycle"]
 				if self.path:
 					self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
@@ -425,7 +462,7 @@ class Hybrid(AI):
 		self.prevDecision = None
 		self.decision = None
 		self.nextDirection, self.nextMove = None, None
-		self.algorithmCount = {"genetic": 0, "pathfind": 0, "cycle": 0, "floodfill": 0}
+		self.algorithmCount = {"genetic": 0, "pathfind": 0, "longPathfind": 0, "cycle": 0, "floodfill": 0}
 		
 # FIX RECURSION DEPTH
 # DOUBLE CHECK STRAIGHT; (0, 1) or (0, -1)??
