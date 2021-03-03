@@ -239,6 +239,8 @@ class Driver:
 			print("    Time of day:", currentTime)
 			bestSnake = snakeDNA.generation["best"]["object"]
 			
+			# RECORD IDX OF LEADING SNAKE HERE OR FROM GENETIC
+			
 			#EXPIRIMENTAL
 			if algoChoice == "Meta Controller":  # delete
 				game.playTrainingGame(bestSnake, render=False)
