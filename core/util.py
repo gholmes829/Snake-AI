@@ -90,7 +90,7 @@ def rotate180(v):
 #  globalLocal --  # know prev direction and new global direction, want to know what turn you took to get to new global direction
 
 orientedDirections = {}
-tempLocal = lambda currDirection: {(-1, 0): rotate90CCW(currDirection), (0, 1): currDirection, (1, 0): rotate90CW(currDirection), (0, -1): rotate180(currDirection)}
+tempLocal = lambda currDirection: {(-1, 0): rotate90CW(currDirection), (0, 1): currDirection, (1, 0): rotate90CCW(currDirection), (0, -1): rotate180(currDirection)}
 
 for curr in ORTHOGONAL:
 	for new in ORTHOGONAL:
@@ -98,14 +98,14 @@ for curr in ORTHOGONAL:
 		
 for curr in ORTHOGONAL:
 	possibleNew = {
-		rotate90CCW(curr): (-1, 0),
+		rotate90CW(curr): (-1, 0),
 		curr: (0, 1),
-		rotate90CW(curr): (1, 0),
+		rotate90CCW(curr): (1, 0),
 		rotate180(curr): (0, -1),
-		rotate45CW(curr): (1, 1),
-		rotate45CCW(curr): (-1, 1),
-		rotate135CW(curr): (1, -1),
-		rotate135CCW(curr): (-1, -1),
+		rotate45CCW(curr): (1, 1),
+		rotate45CW(curr): (-1, 1),
+		rotate135CCW(curr): (1, -1),
+		rotate135CW(curr): (-1, -1),
 	}
 	for new in DIRECTIONS:
 		orientedDirections["global", curr, new] = possibleNew[new]		
@@ -119,7 +119,7 @@ for curr in ORTHOGONAL:
 	for new in DIRECTIONS:
 		localizedDirections[curr, new] = getOrientedDirection(curr, new, "global")
 	
-[print(key, "|", value, "\n") for key, value in orientedDirections.items()] 	
+#[print(key, "|", value, "\n") for key, value in orientedDirections.items()] 	
 #[print(key, "|", value, "\n") for key, value in localizedDirections.items()] 
 		
 def localizeDirection(basis: tuple, direction: tuple) -> tuple:

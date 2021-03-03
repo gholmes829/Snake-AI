@@ -92,8 +92,8 @@ class Environment:
 
 	def step(self) -> None:
 		"""Takes a time step in game, calculating next state and updating game objects."""
-		print("\nBEFORE")
-		self.display()
+		#print("\nBEFORE")
+		#self.display()
 		self.prevSnakeBody = self.snake.body.copy()
 		self.snake.move()
 		self.moveLog.append(self.snake.direction)
@@ -109,8 +109,8 @@ class Environment:
 				self._placeFood()
 			else:  # Snake moved into open space
 				self.gameMap[self.snake.prevTail] = EMPTY
-			print("AFTER")
-			self.display()			
+			#print("AFTER")
+			#self.display()			
 			self.snake.navigate(self.gameMap)
 		
 	def active(self) -> bool:

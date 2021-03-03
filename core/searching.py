@@ -50,7 +50,7 @@ def castRays(origin, orientation, space, rayLength) -> list:
 
 	vision = np.zeros(24)
 
-	for i, direction in enumerate(DIRECTIONS):  # for each direction
+	for i, direction in enumerate(NORMAL_DIRECTIONS):  # for each direction
 		for j, item in ((0, "food"), (8, "body"), (16, "wall")):
 			#vision[i + j] = rays[util.getOrientedDirection("local", orientation, direction)][item]
 			vision[i + j] = rays[util.localizeDirection(orientation, direction)][item]  # add vision, need to change reference so 'global up' will be 'Snake's left' is Snake if facing 'global right'
@@ -59,12 +59,12 @@ def castRays(origin, orientation, space, rayLength) -> list:
 	# VECTORIZE
 	
 	# PRINT VALUES OF VISION TO DEBUG
-	print("FOOD", "BODY", "WALL")
-	print(DIRECTIONS_STR)
-	for i in range(3):
-	    for j in range(8):
-	        print(round(vision[i * 8 + j], 3), end=" ")
-	    print()
+	#print("FOOD", "BODY", "WALL")
+	#print(DIRECTIONS_STR)
+	#for i in range(3):
+	#    for j in range(8):
+	#        print(round(vision[i * 8 + j], 3), end=" ")
+	#    print()
 	return vision, visionBounds
 
 @jit(nopython=True)

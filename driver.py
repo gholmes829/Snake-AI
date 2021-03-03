@@ -85,7 +85,7 @@ class Driver:
 		print()
 		self._checkSave()
 		
-	def _playAI(self, games=1) -> None:
+	def _playAI(self, games=10) -> None:
 		"""User selects saved model from .../dna/trained. Opens GUI window and AI plays game."""
 		# ask user how many games?
 		# change snake kwargs

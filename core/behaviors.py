@@ -164,8 +164,8 @@ class AI:
 			nextMove = self.smartShield(body[0], nextMove, lethalMoves)
 		nextDirection = util.getOrientedDirection(direction, nextMove, "local")
 		
-		nextDirection = (nextDirection[0], nextDirection[1])  # delete
-		print(direction, nextDirection, nextMove)
+		#nextDirection = (nextDirection[0], nextDirection[1])  # delete
+		#print(direction, nextDirection, nextMove)
 		return nextDirection, nextMove
 		
 	def getOpenness(self, body, direction, environment):
