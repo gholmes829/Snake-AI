@@ -107,7 +107,7 @@ class Snake:
 			self.fitness = self.controllerFitness
 		else:
 			self.fitness = self.metaFitness
-		
+
 		self.behavior = behaviors.getBehavior(behaviorType, *behaviorArgs, **behaviorKwargs)
  
 		self.initialSize = initialSize
@@ -171,7 +171,7 @@ class Snake:
 		self.hunger = 0
 		
 	def navigate(self, environment):
-		if (observed := self.behavior.calcMoves(self.body.copy(), deepcopy(self.direction), self.awareness, deepcopy(environment), self.hunger)) is not None:
+		if observed := self.behavior.calcMoves(self.body.copy(), deepcopy(self.direction), self.awareness, deepcopy(environment), self.hunger):
 			self.awareness.update(observed)
 		
 	def setReference(self, origin: tuple) -> None:
@@ -239,7 +239,7 @@ class Snake:
 	@staticmethod
 	def metaFitness(snake) -> None:
 		"""Testing..."""
-		score = ((snake.score ** 3) * snake.age) / 1000 + 1 if sum([p > 0 for p in snake.behavior.algorithmCount.values()]) > 1 else 0
+		score = ((snake.score ** 3) * snake.age) / 1000000 + 1 if sum([p > 0 for p in snake.behavior.algorithmCount.values()]) == 3 else 0
 		#print(snake.behavior.algorithmCount, score)
 		return score  # meta controller training
 	
@@ -248,7 +248,8 @@ class Snake:
 		"""
 		((snake_score)^3 * snake_age)/1000 + 1 if moved in all directions else 0
 		"""
-		return ((snake.score ** 3) * snake.age) / 1000 + 1 if all([p > 0 for p in snake.moveCount.values()]) else 0  # neural network snake training
+		return (((snake.score ** 3) * snake.age) / 1000 + 1) * int(all([p > 0 for p in snake.moveCount.values()])) ** (1 / (snake.behavior.numOpen + 1 if snake.behavior.numOpen in {1, 2} else 1))  # neural network snake training
+		#return ((snake.score ** 3) / snake.age) / 1000 + 1 if all([p > 0 for p in snake.moveCount.values()]) else 0  # neural network snake training
 	   
 	@staticmethod
 	def mergeTraits(child: object, parent1: object, parent2: object) -> None:

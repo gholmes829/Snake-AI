@@ -1,0 +1,21 @@
+{
+    "evolution": 8,
+    "settings": {
+        "map size": [
+            15,
+            15
+        ],
+        "population": 250,
+        "generations": 1000,
+        "snake size": 4,
+        "snake vision": 15,
+        "smart shield": true,
+        "CPU cores": 6
+    },
+    "fitness": "",
+    "architecture": [
+        24,
+        16,
+        3
+    ]
+}

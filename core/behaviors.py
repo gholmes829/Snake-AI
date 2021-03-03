@@ -17,7 +17,7 @@ import keyboard
 import numpy as np
 from copy import deepcopy	
 
-from core import neural_nets, searching
+from core import neural_nets, searching, util
 from core.constants import *
 
 __author__ = "Grant Holmes"
@@ -35,57 +35,14 @@ def getBehavior(behaviorType, *args, **kwargs):
 		"player": Manual,
 		"cycle": Hamiltonian,
 	}[behaviorType](*args, **kwargs)
-
 	
-# BASE CLASSES
-
-class Behavior:
-	"""Interface class with helper functions."""
-	def __init__(self) -> None:
-		"""Does nothing, expandable"""
-		if type(self) == Behavior:
-			raise NotImplementedError
-
-	def __call__(self) -> tuple:
-		"""Does nothing"""
-		raise NotImplementedError
-		
-	def getBrain(self):
-		return {"type": "behavior"}
-		
-	def calcMoves(self, body, direction, awareness, environment, hunger):
-		return
-		
-	def reset(self):
-		return
-		
-	def getInfo(self):
-		return ""
-		
-	@staticmethod
-	def getOrientedDirection(currDirection, newDirection, directionType) -> tuple:
-		if not (abs(newDirection[0]) ^ abs(newDirection[1]) and abs(sum(newDirection)) == 1):
-			raise ValueError("Invalid new direction", currDirection, newDirection)
-		return {
-			"local": lambda: {(-1, 0): Behavior.rotateCCW(currDirection), (0, 1): currDirection, (1, 0): Behavior.rotateCW(currDirection)},
-			"global": lambda: {Behavior.rotateCCW(currDirection): (-1, 0), currDirection: (0, 1), Behavior.rotateCW(currDirection): (1, 0)}
-		}[directionType]()[newDirection]
-
-	@staticmethod
-	def rotateCW(v):
-		return (-v[1], v[0])
-	
-	@staticmethod
-	def rotateCCW(v):
-		return (v[1], -v[0])
 	
 # NON AI BEHAVIORS
 
-class Manual(Behavior):
+class Manual:
 	"""Provides direction based on keyboard input."""
 	def __init__(self) -> None:
 		"""Initializes base class."""
-		Behavior.__init__(self)
 		self.body = None
 		self.direction = None
 
@@ -114,7 +71,7 @@ class Manual(Behavior):
 			move = self.direction
 
 		newDirection = {False: move, True: self.direction}[move == (-self.direction[0], -self.direction[1])]
-		move = self.getOrientedDirection(self.direction, newDirection, "global")
+		move = util.getOrientedDirection(self.direction, newDirection, "global")
 
 		return newDirection, move
 		
@@ -122,8 +79,13 @@ class Manual(Behavior):
 		self.body = body
 		self.direction = direction
 
+	def getBrain(self):
+		return {"type": "behavior"}
 		
-class Replay(Behavior):
+	def reset(self):
+		pass
+		
+class Replay:
 	"""
 	Uses pre-recorded moves to decide direction.
 
@@ -141,7 +103,6 @@ class Replay(Behavior):
 		data: list
 			List of (x, y) moves
 		"""
-		Behavior.__init__(self)
 		self.memories = memories
 		self.t = 0
 
@@ -165,25 +126,31 @@ class Replay(Behavior):
 		
 	def calcMoves(self, body, direction, awareness, environment, hunger):
 		self.nextDirection = self.memories[self.t]
-		self.nextMove = self.getOrientedDirection(direction, newDirection, "global")
+		self.nextMove = util.getOrientedDirection(direction, self.nextDirection, "global")
 		self.t += 1
+		
+	def getBrain(self):
+		return {"type": "behavior"}
+		
+	def reset(self):
+		pass
 	
-class AI(Behavior):
+class AI:
 	def __init__(
 			self,
 			ctrlLayers=(24, 16, 3),
-			metaLayers=(13, 10, 5),
+			metaLayers=(16, 12, 3),
 			shielded=True,
 			ctrlWeights=None,
 			ctrlBiases=None,
 			metaWeights=None,
 			metaBiases=None,
 			):
-		Behavior.__init__(self)
 		self.dafaultOpenness = {(-1, 0): 0, (0, 1): 0, (1, 0): 0}
 		self.openness = self.dafaultOpenness.copy()
 		self.path = []
-		self.otherPaths = {}  # change this
+		#self.otherPaths = {}  # change this
+
 		self.ctrlNetwork = neural_nets.FFNN(ctrlLayers, weights=ctrlWeights, biases=ctrlBiases)
 		self.metaNetwork = neural_nets.FFNN(metaLayers, weights=metaWeights, biases=metaBiases)
 		self.shielded = shielded
@@ -195,14 +162,16 @@ class AI(Behavior):
 		if self.shielded:
 			lethalMoves = {direction for direction, danger in zip([(-1, 0), (0, 1), (1, 0)], [vision[11] == 1 or vision[19] == 1, vision[8] == 1 or vision[16] == 1, vision[9] == 1 or vision[17] == 1]) if danger}
 			nextMove = self.smartShield(body[0], nextMove, lethalMoves)
-		nextDirection = self.getOrientedDirection(direction, nextMove, "local")
+		nextDirection = util.getOrientedDirection(direction, nextMove, "local")
 		
+		nextDirection = (nextDirection[0], nextDirection[1])  # delete
+		print(direction, nextDirection, nextMove)
 		return nextDirection, nextMove
 		
 	def getOpenness(self, body, direction, environment):
 		openness = {}
 		for turnDirection in self.openness:
-			newDirection = self.getOrientedDirection(direction, turnDirection, "local") 
+			newDirection = util.getOrientedDirection(direction, turnDirection, "local") 
 			if environment[(probe := (body[0][0] + newDirection[0], body[0][1] + newDirection[1]))] != -1:  # if adjacent space is open
 				openness[turnDirection] = searching.floodFillCount(deepcopy(environment), probe)
 			else:
@@ -212,7 +181,7 @@ class AI(Behavior):
 	def getSafestMove(self, direction):
 		if sum(self.openness.values()) != 0:
 			nextMove = max(self.openness, key=self.openness.get)  # simplify this?
-			nextDirection = self.getOrientedDirection(direction, nextMove, "local")
+			nextDirection = util.getOrientedDirection(direction, nextMove, "local")
 		else:
 			nextDirection, nextMove = direction, (0, 1)  # straight
 			
@@ -269,18 +238,19 @@ class AI(Behavior):
 				return []
 		else:
 			return self.path
-			
+		
 	def getMoveFromPath(self, body, direction):
 		if self.path:
 			#print(self.path)  # delete
 			moveTo = self.path.pop()
 			nextDirection = (moveTo[0] - body[0][0], moveTo[1] - body[0][1])
 			try:
-				nextMove = self.getOrientedDirection(direction, nextDirection, "global")
+				nextMove = util.getOrientedDirection(direction, nextDirection, "global")
 			except Exception as e:
 				print("INNER START")
 				print("moveTo", moveTo)
 				print("Body", body)
+				#print(self.fullPath)
 				print("Direction", direction)
 				print("Next dir", nextDirection)
 				print(e)
@@ -299,6 +269,12 @@ class AI(Behavior):
 	
 		return localDirection
 
+	def reset(self):
+		pass
+	
+	def getBrain(self):
+		return {"type": "behavior"}
+		
 
 
 # RN ONLY CHOOSING BT GENETIC AND CYLCE, EDIT LAYER ARCHITECTURE
@@ -308,13 +284,19 @@ class NeuralNetwork(AI):
 	def __init__(self, **kwargs) -> None:
 		AI.__init__(self, **kwargs)
 		self.shielded = False
+		self.numOpen = 0
 
 	def getBrain(self):
-		return {"type": "neural network", "weights": self.ctrlNetwork.weights, "biases": self.ctrlNetwork.biases}
+		return {"type": "neural network", "weights": self.ctrlNetwork.weights, "biases": self.ctrlNetwork.biases, "architecture": self.ctrlNetwork.layerSizes}
 
 	def calcMoves(self, body, direction, awareness, environment, hunger):
 		vision, visionBounds = searching.castRays(body[0], direction, environment, awareness["maxVision"])
+		#print(vision)
 		self.nextDirection, self.nextMove = self.getNetworkDecision(body, direction, vision)
+		leftDanger = int(environment[body[0][0] - 1, body[0][1]] == -1)
+		forwardDanger = int(environment[body[0][0], body[0][1] - 1] == -1)
+		rightDanger = int(environment[body[0][0] + 1, body[0][1]] == -1)
+		self.numOpen = 3 - leftDanger - forwardDanger - rightDanger
 		return {"visionBounds": visionBounds}
 		
 	def __call__(self) -> tuple:
@@ -325,7 +307,10 @@ class Hybrid(AI):
 		AI.__init__(self, **kwargs)
 		self.decision = None
 		self.prevDecision = None
-		self.fullPath = None
+		#self.foodFound = False
+		self.prevSnakeSize = 0
+		self.prevHunger = 0
+		#self.fullPath = None
 		self.algorithmCount = {"genetic": 0, "pathfind": 0, "longPathfind": 0, "cycle": 0, "floodfill": 0}
 		
 
@@ -333,7 +318,12 @@ class Hybrid(AI):
 		return {"type": "neural network", "weights": self.metaNetwork.weights, "biases": self.metaNetwork.biases}
 
 	def calcMoves(self, body, direction, awareness, environment, hunger):
-		if self.decision is None or self.decision in {0, 3} or not self.path:
+		foodFound = False
+		if len(body) != self.prevSnakeSize:
+			foodFound = True
+			self.prevSnakeSize = len(body)
+			
+		if self.decision is None or self.decision not in {0, 1, 2, 3} or (not self.path and self.decision != 0) or (self.decision == 0 and foodFound):
 			self.prevDecision = self.decision
 			#print("Calculating")
 			relativeSize = len(body) / environment.area
@@ -350,15 +340,20 @@ class Hybrid(AI):
 				centerCloseness = 1
 			
 			# danger as openness
-			left = self.openness[-1, 0]
-			forward = self.openness[0, 1]
-			right = self.openness[1, 0]
+			leftSpace = self.openness[-1, 0] / environment.area
+			forwardSpace = self.openness[0, 1] / environment.area
+			rightSpace = self.openness[1, 0] / environment.area
+			
+			#proximity
+			leftDanger = int(environment[body[0][0] - 1, body[0][1]] == -1)
+			forwardDanger = int(environment[body[0][0], body[0][1] - 1] == -1)
+			rightDanger = int(environment[body[0][0] + 1, body[0][1]] == -1)
 			
 			# wall dist
-			wallUp = 1 / body[0][1]
-			wallRight = 1 / environment.size[0] - body[0][0]
-			wallDown = 1 / environment.size[1] - body[0][1]
-			wallLeft = 1 / body[0][0]
+			wallUp = 1 / (body[0][1] + 1)
+			wallRight = 1 / (environment.size[0] - body[0][0] + 1)
+			wallDown = 1 / (environment.size[1] - body[0][1] + 1)
+			wallLeft = 1 / (body[0][0] + 1)
 			
 			# food moves
 			dx = abs(food[0] - body[0][0])
@@ -381,23 +376,25 @@ class Hybrid(AI):
 			#print(cycle)
 			#self.otherPaths["short"] = searching.pathfind(environment, body[0], environment.filter(1)[0])[:-1]
 			#self.otherPaths["cycle"] = cycle
-			relativeHunger = hunger/awareness["maxHunger"]
+			relativeHunger = self.prevHunger/awareness["maxHunger"]
+			# allocate num moves instead of full path??
 			
 			#inputs = np.array([relativeSize, relativeSpace, foodCloseness, int(bool(short)), int(bool(cycle)), relativeHunger])
-			inputs = np.array([relativeSize, foodCloseness, tailCloseness, centerCloseness, relativeHunger, relativeMovements, forward, left, right, wallUp, wallRight, wallDown, wallLeft])
+			inputs = np.array([relativeSize, foodCloseness, tailCloseness, centerCloseness, relativeHunger, relativeMovements, forwardSpace, leftSpace, rightSpace, wallUp, wallRight, wallDown, wallLeft, leftDanger, forwardDanger, rightDanger])
 			#print("Making decision with inputs:", inputs)
-			self.decision = np.argmax(self.metaNetwork.feedForward(inputs))
+			outputs = self.metaNetwork.feedForward(inputs)
+			self.decision = np.argmax(outputs)
 			#if self.decision != self.prevDecision and self.prevDecision is not None:
 			#	print(self.prevDecision, "to", self.decision)
 			#self.decision = 2  # delete
-			#print("Decision:", self.decision, inputs)
+			#print("Decision:", self.decision, [round(float(el), 3) for el in inputs])
 			#print()
 			# SWAP INDEXES OF PATHFIND AND CYCLE
 			if self.decision == 0:  # genetic
 				self.algorithmCount["genetic"] += 1
 				vision, visionBounds = searching.castRays(body[0], direction, environment, awareness["maxVision"])
 				self.nextDirection, self.nextMove = self.getNetworkDecision(body, direction, vision)
-				return {"visionBounds": visionBounds}
+				#return {"visionBounds": visionBounds}
 			elif self.decision == 1:  # pathfind
 				self.algorithmCount["pathfind"] += 1
 				projected = set(self.path)
@@ -409,8 +406,8 @@ class Hybrid(AI):
 				else:
 					#self.openness = self.getOpenness(body, direction, environment)
 					self.nextDirection, self.nextMove = self.getSafestMove(direction)
-				return {"path": projected, "openness": self.openness}
-			elif self.decision == 2:  # long pathfind
+				#return {"path": projected, "openness": self.openness}
+			elif self.decision == -10:  # long pathfind, not used
 				self.algorithmCount["longPathfind"] += 1
 				projected = set(self.path)
 				self.path = self.getPath(environment, body, "long")
@@ -421,8 +418,8 @@ class Hybrid(AI):
 				else:
 					#self.openness = self.getOpenness(body, direction, environment)
 					self.nextDirection, self.nextMove = self.getSafestMove(direction)
-				return {"path": projected, "openness": self.openness}
-			elif self.decision == 3:  # cycle
+				#return {"path": projected, "openness": self.openness}
+			elif self.decision == -20:  # cycle
 				self.algorithmCount["cycle"] += 1
 				#projected = set(self.path)
 				self.path = self.getCycle(body, environment)
@@ -439,19 +436,24 @@ class Hybrid(AI):
 				#self.openness = self.getOpenness(body, direction, environment)
 				self.nextDirection, self.nextMove = self.getSafestMove(direction)
 				#return {"openness": self.openness}
-		else:
+		elif self.decision != 0:
 			try:
 				self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
 			except Exception as e:
 				print(e)
 				print("Path", self.path)
 				print("Decisions", self.prevDecision, self.decision)
-				print(self.fullPath)
+				#print(self.fullPath)
 				print("Body", body)
 				print("Direction", direction)
 				print(environment)
 				print(self.openness)
 				raise e
+		else:
+			vision, visionBounds = searching.castRays(body[0], direction, environment, awareness["maxVision"])
+			self.nextDirection, self.nextMove = self.getNetworkDecision(body, direction, vision)
+			#return {"visionBounds": visionBounds}
+		self.prevHunger = hunger
 		
 	def __call__(self) -> tuple:
 		#print(self.nextDirection, self.nextMove)

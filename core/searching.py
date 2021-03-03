@@ -3,6 +3,7 @@ from numba import jit
 from copy import deepcopy
 import numpy as np
  
+from core import util
 from core.constants import *
  
 def castRays(origin, orientation, space, rayLength) -> list:
@@ -22,7 +23,7 @@ def castRays(origin, orientation, space, rayLength) -> list:
 		LEFT: origin[0]
 	}  # get distance from Snake's head to map borders
 
-	
+	# dict comprehension
 	for direction in ORTHOGONAL:  # determine how far rays can go
 		limits[direction] = bounds[direction]
 
@@ -31,8 +32,6 @@ def castRays(origin, orientation, space, rayLength) -> list:
 
 	for direction in DIRECTIONS:  # determine closeness of Snake to walls, initialize rays dict
 		distance = limits[direction] + 1 if direction in ORTHOGONAL else (limits[direction] + 1) * 1.414
-		if distance == 0:
-			print(origin, orientation, int(distance <= rayLength))
 		rays[direction] = {"wall": 1 / distance * int(distance <= rayLength), "food": 0, "body": 0}
 
 	visionBounds = []
@@ -53,36 +52,20 @@ def castRays(origin, orientation, space, rayLength) -> list:
 
 	for i, direction in enumerate(DIRECTIONS):  # for each direction
 		for j, item in ((0, "food"), (8, "body"), (16, "wall")):
-			vision[i + j] = rays[localizeDirection(orientation, direction)][item]  # add data, need to change reference so 'global up' will be 'Snake's left' is Snake if facing 'global right'
-
-	# PRINT VALUES OF DATA TO DEBUG
-	#for i in range(3):
-	#    for j in range(8):
-	#        print(round(data[i * 8 + j], 3), end=" ")
-	#    print()
+			#vision[i + j] = rays[util.getOrientedDirection("local", orientation, direction)][item]
+			vision[i + j] = rays[util.localizeDirection(orientation, direction)][item]  # add vision, need to change reference so 'global up' will be 'Snake's left' is Snake if facing 'global right'
+	
+	# TRY CHANGING DIST TO WITHOUT SQUAREROOT
+	# VECTORIZE
+	
+	# PRINT VALUES OF VISION TO DEBUG
+	print("FOOD", "BODY", "WALL")
+	print(DIRECTIONS_STR)
+	for i in range(3):
+	    for j in range(8):
+	        print(round(vision[i * 8 + j], 3), end=" ")
+	    print()
 	return vision, visionBounds
-
-def localizeDirection(basis: tuple, direction: tuple) -> tuple:
-	"""
-	Reorients direction to perspective of basis.
-
-	Parameters
-	----------
-	basis: tuple
-		Local direction
-	direction: tuple
-		Global direction
-
-	Returns
-	-------
-	tuple: reoriented direction.
-	"""
-	return {
-		UP: lambda unit: unit,
-		RIGHT: lambda unit: (-unit[1], unit[0]),
-		DOWN: lambda unit: (-unit[0], -unit[1]),
-		LEFT: lambda unit: (unit[1], -unit[0]),
-	}[basis](direction)
 
 @jit(nopython=True)
 def dist(pt1: tuple, pt2: tuple) -> float:
@@ -100,7 +83,7 @@ def dist(pt1: tuple, pt2: tuple) -> float:
 	-------
 	float: Euclidean distance
 	"""
-	return ((pt2[0] - pt1[0]) ** 2 + (pt2[1] - pt1[1]) ** 2) ** 0.5\
+	return ((pt2[0] - pt1[0]) ** 2 + (pt2[1] - pt1[1]) ** 2) ** 0.5
 
 
 

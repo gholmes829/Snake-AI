@@ -92,6 +92,8 @@ class Environment:
 
 	def step(self) -> None:
 		"""Takes a time step in game, calculating next state and updating game objects."""
+		print("\nBEFORE")
+		self.display()
 		self.prevSnakeBody = self.snake.body.copy()
 		self.snake.move()
 		self.moveLog.append(self.snake.direction)
@@ -107,8 +109,10 @@ class Environment:
 				self._placeFood()
 			else:  # Snake moved into open space
 				self.gameMap[self.snake.prevTail] = EMPTY
+			print("AFTER")
+			self.display()			
 			self.snake.navigate(self.gameMap)
-			
+		
 	def active(self) -> bool:
 		"""
 		Checks if game is over or not.
@@ -117,7 +121,7 @@ class Environment:
 		-------
 		bool: if Snake is dead
 		"""
-		return not self.snake.dead and not self.snakeWon
+		return not (self.snake.dead or self.snakeWon)
 
 	def getData(self) -> dict:
 		"""
@@ -143,7 +147,7 @@ class Environment:
 		for b in self.snake.body:
 			mapCopy[b] = "#"
 		mapCopy[self.snake.head] = "X"
-		for pair in self.rays:
+		for pair in self.snake.awareness["visionBounds"]:
 			mapCopy[pair[1]] = "@"
 		mapCopy[self.gameMap.filter(1)[0]] = "f"
 		for e in mapCopy.filter(0):
@@ -162,7 +166,7 @@ class Environment:
 		"""Place food on map, either from predetermined pos or randomly chosen on open space."""
 		pos = []
 		if self.foodQueue:
-			pos = (self.foodQueue.pop())
+			pos = self.foodQueue.pop()
 		if not pos or self.gameMap[pos] != EMPTY:
 			emptySpaces = self.gameMap.filter(EMPTY)
 			if emptySpaces:
@@ -172,7 +176,9 @@ class Environment:
 			else:
 				self.snakeWon = True
 				print("WIN!")
-
+		else:
+			self.foodLog.append(pos)
+			self.gameMap[pos] = FOOD
 
 
 class Map(dict):

@@ -54,7 +54,7 @@ def playTrainingGame(snake: snakes.Snake, render: bool = False) -> dict:
 	#print("NEW GAME" + "!" * 20)  # delete
 	environment = environments.Environment(snake, settings.mapSize)
 	playGame(environment, render=render)
-	return {"fitness": snake.fitness(snake),  "score": snake.score}
+	return {"fitness": snake.fitness(snake), "score": snake.score}
 	
 	
 def playPlayerGame(environment: environments.Environment, spaceStart: bool = True) -> None:
@@ -68,6 +68,7 @@ def playPlayerGame(environment: environments.Environment, spaceStart: bool = Tru
 	spaceStart: bool, default=True
 		Indicates if game should be started with space or start automatically
 	"""
+	print("Get ready...")
 	_renderedGame(environment, spaceStart=spaceStart)
 
 
