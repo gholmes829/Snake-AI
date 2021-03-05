@@ -14,10 +14,10 @@ Replay
 """
 
 import keyboard
-import numpy as np
-from copy import deepcopy	
+import numpy as np	
 
-from core import neural_nets, searching, util
+from core import brain
+from core import ai_util as aiu
 from core.constants import *
 
 __author__ = "Grant Holmes"
@@ -26,19 +26,476 @@ __email__ = "g.holmes429@gmail.com"
 # BEHAVIOR FACTORY
 def getBehavior(behaviorType, *args, **kwargs):
 	return {
-		"hybrid": Hybrid,
 		"neural network": NeuralNetwork,
+		"multi": Multi,
+		"hierarchical": Hierarchical,
 		"pathfinder": Pathfinder,
-		"floodPathfinder": FloodPathfinder,
 		"floodfill": FloodFill,
+		"cycle": Hamiltonian,
 		"ghost": Replay,
 		"player": Manual,
-		"cycle": Hamiltonian,
 	}[behaviorType](*args, **kwargs)
-	
-	
-# NON AI BEHAVIORS
+		
+		
+# AI BEHAVIORS
+class NeuralNetwork:
+	def __init__(
+			self,
+			architecture = (24, 16, 3),
+			weights = None,
+			biases = None,
+			shielded = False,
+		) -> None:
+		self.network = brain.FFNN(architecture, weights=weights, biases=biases)
+		self.shielded = shielded
+		self.nextDirection, self.nextMove = None, None
+		self.getNetworkDecision = self.getNetworkDecisionFunc(self.shielded)
+		self.ds = ((-1, 0), (0, -1), (1, 0))
+		self.numOpenAdjacent = 0
 
+	def calcMoves(self, body, direction, awareness, environment, hunger):
+		vision, visionBounds = brain.castRays(body[0], direction, environment, awareness["maxVision"])
+		self.nextDirection, self.nextMove = self.getNetworkDecision(self.network, body, direction, vision)
+		head = body[0]
+		adjacentDanger = sum([int(environment[head[0] + dx, head[1] + dy] == -1) for dx, dy in self.ds])
+		self.numOpenAdjacent = 3 - adjacentDanger  # maybe change fitness heuristic to based on num danger instead of num open?
+		return {"visionBounds": visionBounds}
+		
+	def __call__(self) -> tuple:
+		return self.nextDirection, self.nextMove
+	
+	def getBrain(self):
+		return {"type": "neural network", "weights": self.network.weights, "biases": self.network.biases, "architecture": self.network.layerSizes}
+	
+	def reset(self):
+		pass
+	
+	@staticmethod
+	def getNetworkDecisionFunc(shielded):
+		if shielded:
+			return aiu.getShieldedNetworkDecision
+		else:
+			return aiu.getNetworkDecision
+
+			
+class Pathfinder:  # DEBUGGING FLOOD
+	def __init__(self, pathLength = "short", floodfill=False):
+		self.nextDirection, self.nextMove = None, None
+		self.path = []
+		self.openness = {(-1, 0): 0, (0, 1): 0, (1, 0): 0}
+		self.pathLength = pathLength
+		self.floodfill = floodfill
+		
+	def calcMoves(self, body, direction, awareness, environment, hunger):
+		projected = set(self.path)
+		if not self.path:
+			self.path = aiu.getPath(environment, body, self.pathLength)
+		if self.path:
+			self.nextDirection, self.nextMove = aiu.getMoveFromPath(self.path, body, direction)
+		elif self.floodfill:
+			self.openness = aiu.getOpenness(body, direction, environment)
+			self.nextDirection, self.nextMove = aiu.getSafestMove(self.openness, direction)
+		else:
+			self.nextDirection, self.nextMove = direction, (0, 1)
+		return {"path": projected}
+
+	def __call__(self):
+		return self.nextDirection, self.nextMove
+
+	def reset(self):
+		self.path.clear()
+		
+	def brain(self):
+		return {"type": "behavior"}
+		
+		
+class Hamiltonian:
+	def __init__(self, floodfill=False):
+		self.nextDirection, self.nextMove = None, None
+		self.path = []
+		self.openness = None
+		self.floodfill = floodfill
+		
+	def calcMoves(self, body, direction, awareness, environment, hunger):
+		projected = set(self.path)
+		if not self.path:
+			self.path = aiu.getCycle(body, environment)
+		if self.path:
+			self.nextDirection, self.nextMove = aiu.getMoveFromPath(self.path, body, direction)
+		elif self.floodfill:
+			self.openness = aiu.getOpenness(body, direction, environment)
+			self.nextDirection, self.nextMove = aiu.getSafestMove(self.openness, direction)
+		else:
+			self.nextDirection, self.nextMove = direction, (0, 1)
+		return {"path": projected, "openness": self.openness}
+
+	def __call__(self):
+		return self.nextDirection, self.nextMove
+		
+	def reset(self):
+		self.path.clear()
+		
+	def brain(self):
+		return {"type": "behavior"}
+		
+class FloodFill:
+	def __init__(self):
+		self.nextDirection, self.nextMove = None, None
+		self.openness = None
+		self.distances = None
+		
+	def calcMoves(self, body, direction, awareness, environment, hunger):
+		self.openness = aiu.getOpenness(body, direction, environment, depth=-1)
+		self.distances = aiu.getDistances(body[0], direction, environment.filter(1)[0])
+		self.nextDirection, self.nextMove = aiu.getCloseSafeMove(self.openness, self.distances, direction)
+		return {"openness": self.openness}
+
+	def __call__(self):
+		return self.nextDirection, self.nextMove
+		
+	def reset(self):
+		pass
+			
+	def brain(self):
+		return {"type": "behavior"}
+			
+			
+			
+			
+class Multi:  # genetic, pathfinding, floodfill
+	def __init__(
+			self,
+			floodfill = True,
+			architecture=(24, 16, 3),
+			weights = None,
+			biases = None,
+			metaArchitecture=(21, 14, 3),
+			metaWeights = None,
+			metaBiases = None,
+			shielded = False,
+			pathLength = "short",
+			):
+		self.nextDirection, self.nextMove = None, None
+		self.path = []
+		self.openness = None
+		self.shielded = shielded
+		self.floodfill = floodfill
+		self.pathLength = pathLength
+		self.getNetworkDecision = NeuralNetwork.getNetworkDecisionFunc(self.shielded)
+		
+		self.network = brain.FFNN(architecture, weights=weights, biases=biases)
+		self.metaNetwork = brain.FFNN(metaArchitecture, weights=metaWeights, biases=metaBiases)
+		
+		self.algoUsage = {"genetic": 0, "pathfind": 0, "floodfill": 0}
+		self.algoIndexToName = {0: "genetic", 1: "pathfind", 2: "floodfill"}
+		
+		#self.prevSnakeSize = 0
+		self.singleCounter = 0
+		self.prevSnakeHunger = 0
+		#self.maxSingleCounter = 5
+		self.numOpenAdjacent = 0
+		
+		self.ds = ((-1, 0), (0, -1), (1, 0))
+
+		# current decisions
+		self.algoIndex = None
+		self.algoName = None
+		
+	def calcMoves(self, body, direction, awareness, environment, hunger):
+		# foodFound = False
+		food = environment.filter(1)[0]
+		head = body[0]
+		tail = body[-1]
+		
+		#if len(body) != self.prevSnakeSize:
+		#	foodFound = True
+		#	self.prevSnakeSize = len(body)
+			
+		#if (self.algoIndex in {0, 2} and foodFound) or (self.algoIndex == 1 and not self.path) or self.algoIndex is None:
+		if self.algoIndex in {0, 2} or (self.algoIndex == 1 and not self.path) or self.algoIndex is None:
+			# calculate input features
+			relativeSnakeSize = len(body) / environment.area
+			
+			foodCloseness = 1 / brain.distOpt(body[0], food)
+			tailCloseness = 1 / brain.distOpt(body[0], body[-1])
+			
+			centerCloseness = 1 / (brain.distOpt(body[0], (int(environment.size[0]/2), int(environment.size[1]/2))) + 1)
+				
+			# danger as openness (need flood fill to search for openness, expensive)
+			#leftSpace = self.openness[-1, 0] / environment.area
+			#forwardSpace = self.openness[0, 1] / environment.area
+			#rightSpace = self.openness[1, 0] / environment.area
+			
+			#proximity
+			left, right = brain.rotate(direction, 90), brain.rotate(direction, -90)
+			leftDanger = int(environment[head[0] + left[0], head[1] + left[1]] == -1)
+			forwardDanger = int(environment[head[0] + direction[0], head[1] + direction[1]] == -1)
+			rightDanger = int(environment[head[0] + right[0], head[1] + right[1]] == -1)
+			
+			self.numOpenAdjacent = 3 - leftDanger - forwardDanger - rightDanger
+			
+			leftDangerFood = int(environment[food[0] - 1, food[1]] == -1)
+			upDangerFood = int(environment[food[0], food[1] - 1] == -1)
+			rightDangerFood = int(environment[food[0] + 1, food[1]] == -1)
+			downDangerFood = int(environment[food[0], food[1] + 1] == -1)
+			
+			leftDangerTail = int(environment[tail[0] - 1, tail[1]] == -1)
+			upDangerTail = int(environment[tail[0], tail[1] - 1] == -1)
+			rightDangerTail = int(environment[tail[0] + 1, tail[1]] == -1)
+			downDangerTail = int(environment[tail[0], tail[1] + 1] == -1)
+			
+			# wall dist
+			wallUp = 1 / (body[0][1] + 1)
+			wallRight = 1 / (environment.size[0] - head[0] + 1)
+			wallDown = 1 / (environment.size[1] - head[1] + 1)
+			wallLeft = 1 / (head[0] + 1)
+			
+			# maybe change hunger to curr instead of previous unless change behavior on food aquisition
+			
+			# food relations
+			relativeHunger = self.prevSnakeHunger/awareness["maxHunger"]
+			manhattanMovesToFood = (abs(food[0] - head[0]) + abs(food[1] - head[1])) / (sum(environment.size))
+			
+			features = np.array([
+				relativeSnakeSize,
+				foodCloseness,
+				tailCloseness,
+				centerCloseness,
+				wallUp,
+				wallRight,
+				wallDown,
+				wallLeft,
+				leftDanger,
+				forwardDanger,
+				rightDanger,
+				leftDangerFood,
+				upDangerFood,
+				rightDangerFood,
+				downDangerFood,
+				leftDangerTail,
+				upDangerTail,
+				rightDangerTail,
+				downDangerTail,
+				relativeHunger,
+				manhattanMovesToFood
+			])
+			
+			self.algoIndex = np.argmax(self.metaNetwork.feedForward(features))
+			self.algoName = self.algoIndexToName[self.algoIndex]
+			# print(algoName)
+			
+			#self.singleCounter = self.maxSingleCounter
+			
+		if self.algoIndex == 0:
+			vision, visionBounds = brain.castRays(head, direction, environment, awareness["maxVision"])
+			self.nextDirection, self.nextMove = self.getNetworkDecision(self.network, body, direction, vision)
+		elif self.algoIndex == 1:
+			if not self.path:
+				self.path = aiu.getPath(environment, body, self.pathLength)
+			if self.path:
+				self.nextDirection, self.nextMove = aiu.getMoveFromPath(self.path, body, direction)
+			elif self.floodfill:
+				self.openness = aiu.getOpenness(body, direction, environment)
+				self.nextDirection, self.nextMove = aiu.getSafestMove(self.openness, direction)
+			else:
+				self.nextDirection, self.nextMove = direction, (0, 1)
+		elif self.algoIndex == 2:
+			self.openness = aiu.getOpenness(body, direction, environment, depth=-1)
+			self.distances = aiu.getDistances(head, direction, food)
+			self.nextDirection, self.nextMove = aiu.getCloseSafeMove(self.openness, self.distances, direction)
+		else:  # space to define more
+			raise NotImplementedError
+		
+		self.algoUsage[self.algoName] += 1
+		self.prevSnakeHunger = hunger
+		#self.singleCounter -= 1
+		
+	def __call__(self):
+		return self.nextDirection, self.nextMove
+		
+	def reset(self):
+		self.algoUsage = {"genetic": 0, "pathfind": 0, "floodfill": 0}
+		self.path.clear()
+		self.algoIndex = None
+		self.algoName = None
+		self.prevSnakeHunger = 0
+		self.numOpenAdjacent = 0
+		#self.singleCounter = 0
+		
+	def getBrain(self):
+		return {"type": "meta network", "weights": self.metaNetwork.weights, "biases": self.metaNetwork.biases, "architecture": self.metaNetwork.layerSizes}
+		
+		
+class Hierarchical:
+	def __init__(
+			self,
+			networkData = None,
+			metaArchitecture = (21, 14, 3),
+			metaWeights = None,
+			metaBiases = None,
+			shielded = False,
+			):
+		self.nextDirection, self.nextMove = None, None
+		self.metaNetwork = brain.FFNN(metaArchitecture, weights=metaWeights, biases=metaBiases)
+		self.shielded = shielded
+		
+		self.getNetworkDecision = NeuralNetwork.getNetworkDecisionFunc(self.shielded)
+		self.networks = []
+		
+		if networkData is None:
+			networkData = []
+			
+		for data in networkData:
+			architecture = data["architecture"]
+			weights = data["weights"]
+			biases = data["biases"]
+			self.networks.append(brain.FFNN(architecture, weights=weights, biases=biases))
+		
+		# current decisions
+		self.algoIndex = None
+		self.algoName = None
+		
+		self.prevSnakeHunger = 0
+		
+		self.numOpenAdjacent = 0
+		
+		self.algoUsage = {"network 1": 0, "network 2": 0, "network 3": 0}
+		self.algoIndexToName = {0: "network 1", 1: "network 2", 2: "network 3"}
+		
+	def calcMoves(self, body, direction, awareness, environment, hunger):
+		food = environment.filter(1)[0]
+		head = body[0]
+		tail = body[-1]
+		
+		# calculate input features
+		relativeSnakeSize = len(body) / environment.area
+		
+		foodCloseness = 1 / brain.distOpt(body[0], food)
+		tailCloseness = 1 / brain.distOpt(body[0], body[-1])
+		
+		centerCloseness = 1 / (brain.distOpt(body[0], (int(environment.size[0]/2), int(environment.size[1]/2))) + 1)
+			
+		# danger as openness (need flood fill to search for openness, expensive)
+		#leftSpace = self.openness[-1, 0] / environment.area
+		#forwardSpace = self.openness[0, 1] / environment.area
+		#rightSpace = self.openness[1, 0] / environment.area
+		
+		#proximity
+		left, right = brain.rotate(direction, 90), brain.rotate(direction, -90)
+		leftDanger = int(environment[head[0] + left[0], head[1] + left[1]] == -1)
+		forwardDanger = int(environment[head[0] + direction[0], head[1] + direction[1]] == -1)
+		rightDanger = int(environment[head[0] + right[0], head[1] + right[1]] == -1)
+		
+		self.numOpenAdjacent = 3 - leftDanger - forwardDanger - rightDanger
+		
+		leftDangerFood = int(environment[food[0] - 1, food[1]] == -1)
+		upDangerFood = int(environment[food[0], food[1] - 1] == -1)
+		rightDangerFood = int(environment[food[0] + 1, food[1]] == -1)
+		downDangerFood = int(environment[food[0], food[1] + 1] == -1)
+		
+		leftDangerTail = int(environment[tail[0] - 1, tail[1]] == -1)
+		upDangerTail = int(environment[tail[0], tail[1] - 1] == -1)
+		rightDangerTail = int(environment[tail[0] + 1, tail[1]] == -1)
+		downDangerTail = int(environment[tail[0], tail[1] + 1] == -1)
+		
+		# wall dist
+		wallUp = 1 / (body[0][1] + 1)
+		wallRight = 1 / (environment.size[0] - head[0] + 1)
+		wallDown = 1 / (environment.size[1] - head[1] + 1)
+		wallLeft = 1 / (head[0] + 1)
+		
+		# food relations
+		relativeHunger = self.prevSnakeHunger/awareness["maxHunger"]
+		manhattanMovesToFood = (abs(food[0] - head[0]) + abs(food[1] - head[1])) / (sum(environment.size))
+		
+		features = np.array([
+			relativeSnakeSize,
+			foodCloseness,
+			tailCloseness,
+			centerCloseness,
+			wallUp,
+			wallRight,
+			wallDown,
+			wallLeft,
+			leftDanger,
+			forwardDanger,
+			rightDanger,
+			leftDangerFood,
+			upDangerFood,
+			rightDangerFood,
+			downDangerFood,
+			leftDangerTail,
+			upDangerTail,
+			rightDangerTail,
+			downDangerTail,
+			relativeHunger,
+			manhattanMovesToFood
+		])
+		
+		"""
+		# ------------------------------------------------------------------------------------------------------------------------------------
+		# ENSEMBLE-LIKE BAYESIAN ANALYSIS
+		
+		m = 10  # number of ensembles
+		n = features.shape[0]  # number of input features
+		
+		# noise parameters based on normal distribution but could change model to multi modal or other distribution
+		mu = 0  # normal mean
+		sigma = 1  # normal std
+		
+		ensembles = np.zeros((m, n))
+		
+		for i in range(m):  # generate ensembles with noise
+			ensembles[i] = features + np.random.normal(mu, sigma, n)  # mean, std, shape
+		
+		output = self.metaNetwork.feedForward(ensembles)  # m x 3
+		# would it be useful to take softmax of output to get probabilistic view?
+		
+		cov = numpy.cov(output)  # get covariance matrix 3 x 3
+		variance = cov.diagonal()  # would this measure how much each decision varied with respect to pertubations in input?
+		muHat = variance.mean()  # would getting the mean of uncertainties give me an overall indicator of uncertainty in decisions?
+		sigmaHat = variance.std()  # would this be helpful in any way?
+		
+		# would eigenspace be useful for analysis? Maybe find components?
+		eigVals, eigVecs = numpy.linalg.eig(covariance)  # find unit eigen vectors and corresponding eigen values of covariance matrix
+		idxOrder = eigVals.argsort()[::-1]  # sort by descending order
+		eigVals = eigVals[idxOrder]  # largest to smallest
+		eigVecs = eigVecs[:,idxOrder]  # columns correspond with eigen eigVals
+		
+		# analysis?
+		
+		# how to apply bayesian inference? Bayes decision theory?
+		
+		# feed uncertainty back into decision making? If very low confidence use very safe algorithm like floodfill?
+		# ------------------------------------------------------------------------------------------------------------------------------------
+		"""
+		
+		
+		self.algoIndex = np.argmax(self.metaNetwork.feedForward(features))
+		self.algoName = self.algoIndexToName[self.algoIndex]
+		#print(algoName)
+		self.algoUsage[self.algoName] += 1
+		
+		vision, visionBounds = brain.castRays(head, direction, environment, awareness["maxVision"])
+		self.nextDirection, self.nextMove = self.getNetworkDecision(self.networks[self.algoIndex], body, direction, vision)
+		
+		self.prevSnakeHunger = hunger
+		
+	def __call__(self):
+		return self.nextDirection, self.nextMove
+		
+	def reset(self):
+		self.algoUsage = {"network 1": 0, "network 2": 0, "network 3": 0}
+		self.algoIndex = None
+		self.algoName = None
+		self.prevSnakeHunger = 0
+		self.numOpenAdjacent = 0
+		
+	def getBrain(self):
+		return {"type": "meta network", "weights": self.metaNetwork.weights, "biases": self.metaNetwork.biases, "architecture": self.metaNetwork.layerSizes}
+			
+		
+# NON AI BEHAVIORS
 class Manual:
 	"""Provides direction based on keyboard input."""
 	def __init__(self) -> None:
@@ -71,7 +528,7 @@ class Manual:
 			move = self.direction
 
 		newDirection = {False: move, True: self.direction}[move == (-self.direction[0], -self.direction[1])]
-		move = util.getOrientedDirection(self.direction, newDirection, "global")
+		move = brain.getOrientedDirection(self.direction, newDirection, "global")
 
 		return newDirection, move
 		
@@ -126,7 +583,7 @@ class Replay:
 		
 	def calcMoves(self, body, direction, awareness, environment, hunger):
 		self.nextDirection = self.memories[self.t]
-		self.nextMove = util.getOrientedDirection(direction, self.nextDirection, "global")
+		self.nextMove = brain.getOrientedDirection(direction, self.nextDirection, "global")
 		self.t += 1
 		
 	def getBrain(self):
@@ -134,415 +591,4 @@ class Replay:
 		
 	def reset(self):
 		pass
-	
-class AI:
-	def __init__(
-			self,
-			ctrlLayers=(24, 16, 3),
-			metaLayers=(16, 12, 3),
-			shielded=True,
-			ctrlWeights=None,
-			ctrlBiases=None,
-			metaWeights=None,
-			metaBiases=None,
-			):
-		self.dafaultOpenness = {(-1, 0): 0, (0, 1): 0, (1, 0): 0}
-		self.openness = self.dafaultOpenness.copy()
-		self.path = []
-		#self.otherPaths = {}  # change this
-
-		self.ctrlNetwork = neural_nets.FFNN(ctrlLayers, weights=ctrlWeights, biases=ctrlBiases)
-		self.metaNetwork = neural_nets.FFNN(metaLayers, weights=metaWeights, biases=metaBiases)
-		self.shielded = shielded
-		self.nextDirection, self.nextMove = None, None
-
-	def getNetworkDecision(self, body, direction, vision):
-		decision = np.argmax(self.ctrlNetwork.feedForward(vision))
-		nextMove = {0: (-1, 0), 1: (0, 1), 2: (1, 0)}[decision]  # local direction
-		if self.shielded:
-			lethalMoves = {direction for direction, danger in zip([(-1, 0), (0, 1), (1, 0)], [vision[11] == 1 or vision[19] == 1, vision[8] == 1 or vision[16] == 1, vision[9] == 1 or vision[17] == 1]) if danger}
-			nextMove = self.smartShield(body[0], nextMove, lethalMoves)
-		nextDirection = util.getOrientedDirection(direction, nextMove, "local")
 		
-		#nextDirection = (nextDirection[0], nextDirection[1])  # delete
-		#print(direction, nextDirection, nextMove)
-		return nextDirection, nextMove
-		
-	def getOpenness(self, body, direction, environment):
-		openness = {}
-		for turnDirection in self.openness:
-			newDirection = util.getOrientedDirection(direction, turnDirection, "local") 
-			if environment[(probe := (body[0][0] + newDirection[0], body[0][1] + newDirection[1]))] != -1:  # if adjacent space is open
-				openness[turnDirection] = searching.floodFillCount(deepcopy(environment), probe)
-			else:
-				openness[turnDirection] = 0
-		return openness
-		
-	def getSafestMove(self, direction):
-		if sum(self.openness.values()) != 0:
-			nextMove = max(self.openness, key=self.openness.get)  # simplify this?
-			nextDirection = util.getOrientedDirection(direction, nextMove, "local")
-		else:
-			nextDirection, nextMove = direction, (0, 1)  # straight
-			
-		return nextDirection, nextMove
-		
-	def getPath(self, environment, body, length: str):
-		if not self.path:
-			if length == "short":
-				return searching.pathfind(environment, body[0], environment.filter(1)[0])[:-1]
-			else:  # length == "long"
-				return searching.longPathfind(environment, body[0], environment.filter(1)[0])[:-1]
-		else:
-			return self.path
-			
-	def getCycle(self, body, environment):
-		if not self.path:
-			if initialPath := searching.longestPath(environment, body[0], body[-1], environment.filter(1)[0])[:-1]:
-				connection = body[:-1]
-				full = connection + initialPath
-				"""
-				for i in range(len(connection) - 1):
-					first = connection[i]
-					second = connection[i+1]
-					diff = (second[0]-first[0], second[1]-first[1])
-					
-					if diff not in {(1, 0), (-1, 0), (0, 1), (0, -1)}:
-						print("Hole", i, first, second, diff)
-						print("Body", body)
-						print("Short path", searching.pathfind(environment, body[0], body[-1], impassable=impassable))
-						raise AssertionError("Connection has holes", connection)
-				"""
-				#for i in range(len(initialPath) - 1):
-				#	first = initialPath[i]
-				#	second = initialPath[i+1]
-				#	diff = (second[0]-first[0], second[1]-first[1])
-				#	if diff not in {(1, 0), (-1, 0), (0, 1), (0, -1)}:
-				#		print("Hole", i, first, second, diff)
-				#		print("Body", body)
-				#		print("Short path", searching.pathfind(environment, body[0], body[-1]))
-				#		raise AssertionError("initialPath has holes", initialPath)
-				"""
-				for i in range(len(full) - 1):
-					first = full[i]
-					second = full[i+1]
-					diff = (second[0]-first[0], second[1]-first[1])
-					if diff not in {(1, 0), (-1, 0), (0, 1), (0, -1)}:
-						print("Hole", i, first, second, diff)
-						print("Body", body)
-						print("Short path", searching.pathfind(environment, body[0], body[-1], impassable=impassable))
-						raise AssertionError("full has holes", full)
-				"""
-				return full
-			else:
-				return []
-		else:
-			return self.path
-		
-	def getMoveFromPath(self, body, direction):
-		if self.path:
-			#print(self.path)  # delete
-			moveTo = self.path.pop()
-			nextDirection = (moveTo[0] - body[0][0], moveTo[1] - body[0][1])
-			try:
-				nextMove = util.getOrientedDirection(direction, nextDirection, "global")
-			except Exception as e:
-				print("INNER START")
-				print("moveTo", moveTo)
-				print("Body", body)
-				#print(self.fullPath)
-				print("Direction", direction)
-				print("Next dir", nextDirection)
-				print(e)
-				print("INNER END")
-				raise e
-		else:
-			nextDirection, nextMove = direction, (0, 1)
-		return nextDirection, nextMove
-		
-	@staticmethod
-	def smartShield(head, localDirection, lethalMoves):
-		movesLeft = {(-1, 0), (0, 1), (1, 0)} - {localDirection}  # left, straight, right
-		
-		while movesLeft and localDirection in lethalMoves:
-			localDirection = movesLeft.pop()
-	
-		return localDirection
-
-	def reset(self):
-		pass
-	
-	def getBrain(self):
-		return {"type": "behavior"}
-		
-
-
-# RN ONLY CHOOSING BT GENETIC AND CYLCE, EDIT LAYER ARCHITECTURE
-		
-# AI BEHAVIORS
-class NeuralNetwork(AI):
-	def __init__(self, **kwargs) -> None:
-		AI.__init__(self, **kwargs)
-		self.shielded = False
-		self.numOpen = 0
-
-	def getBrain(self):
-		return {"type": "neural network", "weights": self.ctrlNetwork.weights, "biases": self.ctrlNetwork.biases, "architecture": self.ctrlNetwork.layerSizes}
-
-	def calcMoves(self, body, direction, awareness, environment, hunger):
-		vision, visionBounds = searching.castRays(body[0], direction, environment, awareness["maxVision"])
-		#print(vision)
-		self.nextDirection, self.nextMove = self.getNetworkDecision(body, direction, vision)
-		leftDanger = int(environment[body[0][0] - 1, body[0][1]] == -1)
-		forwardDanger = int(environment[body[0][0], body[0][1] - 1] == -1)
-		rightDanger = int(environment[body[0][0] + 1, body[0][1]] == -1)
-		self.numOpen = 3 - leftDanger - forwardDanger - rightDanger
-		return {"visionBounds": visionBounds}
-		
-	def __call__(self) -> tuple:
-		return self.nextDirection, self.nextMove
-
-class Hybrid(AI):
-	def __init__(self, **kwargs) -> None:
-		AI.__init__(self, **kwargs)
-		self.decision = None
-		self.prevDecision = None
-		#self.foodFound = False
-		self.prevSnakeSize = 0
-		self.prevHunger = 0
-		#self.fullPath = None
-		self.algorithmCount = {"genetic": 0, "pathfind": 0, "longPathfind": 0, "cycle": 0, "floodfill": 0}
-		
-
-	def getBrain(self):
-		return {"type": "neural network", "weights": self.metaNetwork.weights, "biases": self.metaNetwork.biases}
-
-	def calcMoves(self, body, direction, awareness, environment, hunger):
-		foodFound = False
-		if len(body) != self.prevSnakeSize:
-			foodFound = True
-			self.prevSnakeSize = len(body)
-			
-		if self.decision is None or self.decision not in {0, 1, 2, 3} or (not self.path and self.decision != 0) or (self.decision == 0 and foodFound):
-			self.prevDecision = self.decision
-			#print("Calculating")
-			relativeSize = len(body) / environment.area
-			#print("Finding openness...")
-			self.openness = self.getOpenness(body, direction, environment)
-			food = environment.filter(1)[0]
-			#print(self.openness[max(self.openness)])
-			#relativeSpace = self.openness[max(self.openness)] / environment.area
-			foodCloseness = 1 / searching.dist(body[0], food)
-			tailCloseness = 1 / searching.dist(body[0], body[-1])
-			if (center := (int(environment.size[0]/2), int(environment.size[1]/2))) != body[0]:
-				centerCloseness = 1 / searching.dist(body[0], center)
-			else:
-				centerCloseness = 1
-			
-			# danger as openness
-			leftSpace = self.openness[-1, 0] / environment.area
-			forwardSpace = self.openness[0, 1] / environment.area
-			rightSpace = self.openness[1, 0] / environment.area
-			
-			#proximity
-			leftDanger = int(environment[body[0][0] - 1, body[0][1]] == -1)
-			forwardDanger = int(environment[body[0][0], body[0][1] - 1] == -1)
-			rightDanger = int(environment[body[0][0] + 1, body[0][1]] == -1)
-			
-			# wall dist
-			wallUp = 1 / (body[0][1] + 1)
-			wallRight = 1 / (environment.size[0] - body[0][0] + 1)
-			wallDown = 1 / (environment.size[1] - body[0][1] + 1)
-			wallLeft = 1 / (body[0][0] + 1)
-			
-			# food moves
-			dx = abs(food[0] - body[0][0])
-			dy = abs(food[1] - body[0][1])
-			relativeMovements = (dx + dy) / (sum(environment.size))
-			
-			#up = environment[(body[0][0], body[0][1] - 1)] == -1
-			#left = environment[(body[0][0] - 1, body[0][1])] == -1
-			#right = environment[(body[0][0] + 1, body[0][1])] == -1
-			
-			#print("Finding short path...")
-			#short = searching.pathfind(environment, body[0], body[-1])
-			#print("Finding cycle path...")
-			#initialPath = searching.longestPath(environment, body[0], body[-1], environment.filter(1)[0], path=short)[:-1]
-			#cycle = body[:-1] + initialPath
-			#print(body)
-			#print(short)
-			#print(initialPath)
-			#print(body[:-1])
-			#print(cycle)
-			#self.otherPaths["short"] = searching.pathfind(environment, body[0], environment.filter(1)[0])[:-1]
-			#self.otherPaths["cycle"] = cycle
-			relativeHunger = self.prevHunger/awareness["maxHunger"]
-			# allocate num moves instead of full path??
-			
-			#inputs = np.array([relativeSize, relativeSpace, foodCloseness, int(bool(short)), int(bool(cycle)), relativeHunger])
-			inputs = np.array([relativeSize, foodCloseness, tailCloseness, centerCloseness, relativeHunger, relativeMovements, forwardSpace, leftSpace, rightSpace, wallUp, wallRight, wallDown, wallLeft, leftDanger, forwardDanger, rightDanger])
-			#print("Making decision with inputs:", inputs)
-			outputs = self.metaNetwork.feedForward(inputs)
-			self.decision = np.argmax(outputs)
-			#if self.decision != self.prevDecision and self.prevDecision is not None:
-			#	print(self.prevDecision, "to", self.decision)
-			#self.decision = 2  # delete
-			#print("Decision:", self.decision, [round(float(el), 3) for el in inputs])
-			#print()
-			# SWAP INDEXES OF PATHFIND AND CYCLE
-			if self.decision == 0:  # genetic
-				self.algorithmCount["genetic"] += 1
-				vision, visionBounds = searching.castRays(body[0], direction, environment, awareness["maxVision"])
-				self.nextDirection, self.nextMove = self.getNetworkDecision(body, direction, vision)
-				#return {"visionBounds": visionBounds}
-			elif self.decision == 1:  # pathfind
-				self.algorithmCount["pathfind"] += 1
-				projected = set(self.path)
-				self.path = self.getPath(environment, body, "short")
-				#self.fullPath = self.path.copy()
-				#self.path = self.otherPaths["short"]
-				if self.path:
-					self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
-				else:
-					#self.openness = self.getOpenness(body, direction, environment)
-					self.nextDirection, self.nextMove = self.getSafestMove(direction)
-				#return {"path": projected, "openness": self.openness}
-			elif self.decision == -10:  # long pathfind, not used
-				self.algorithmCount["longPathfind"] += 1
-				projected = set(self.path)
-				self.path = self.getPath(environment, body, "long")
-				#self.fullPath = self.path.copy()
-				#self.path = self.otherPaths["short"]
-				if self.path:
-					self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
-				else:
-					#self.openness = self.getOpenness(body, direction, environment)
-					self.nextDirection, self.nextMove = self.getSafestMove(direction)
-				#return {"path": projected, "openness": self.openness}
-			elif self.decision == -20:  # cycle
-				self.algorithmCount["cycle"] += 1
-				#projected = set(self.path)
-				self.path = self.getCycle(body, environment)
-				#self.fullPath = self.path.copy()
-				#self.path = self.otherPaths["cycle"]
-				if self.path:
-					self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
-				else:
-					#self.openness = self.getOpenness(body, direction, environment)
-					self.nextDirection, self.nextMove = self.getSafestMove(direction)
-				#return {"path": projected}
-			else:  # floodfill
-				self.algorithmCount["floodfill"] += 1
-				#self.openness = self.getOpenness(body, direction, environment)
-				self.nextDirection, self.nextMove = self.getSafestMove(direction)
-				#return {"openness": self.openness}
-		elif self.decision != 0:
-			try:
-				self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
-			except Exception as e:
-				print(e)
-				print("Path", self.path)
-				print("Decisions", self.prevDecision, self.decision)
-				#print(self.fullPath)
-				print("Body", body)
-				print("Direction", direction)
-				print(environment)
-				print(self.openness)
-				raise e
-		else:
-			vision, visionBounds = searching.castRays(body[0], direction, environment, awareness["maxVision"])
-			self.nextDirection, self.nextMove = self.getNetworkDecision(body, direction, vision)
-			#return {"visionBounds": visionBounds}
-		self.prevHunger = hunger
-		
-	def __call__(self) -> tuple:
-		#print(self.nextDirection, self.nextMove)
-		return self.nextDirection, self.nextMove
-		
-	def reset(self):
-		self.path = []
-		self.prevDecision = None
-		self.decision = None
-		self.nextDirection, self.nextMove = None, None
-		self.algorithmCount = {"genetic": 0, "pathfind": 0, "longPathfind": 0, "cycle": 0, "floodfill": 0}
-		
-# FIX RECURSION DEPTH
-# DOUBLE CHECK STRAIGHT; (0, 1) or (0, -1)??
-# TEST TRAINING
-# IF NOT WORKING DOUBLE CHECK ROTATION
-# MIGHT STILL NEED TO MODIFY ENVIRONMENT -> SNAKE -> BEHAVIOR CONTORL FLOW
-# EVENTUALLY REFACTOR BC VERY MESSY
-# DOUBLE CHECK NOTES ON PHONE
-# ... YOU GOT THIS!!!
-		
-class Pathfinder(AI):
-	def __init__(self):
-		AI.__init__(self)
-		
-	def calcMoves(self, body, direction, awareness, environment, hunger):
-		projected = set(self.path)
-		self.path = self.getPath(environment, body, "short")
-		self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
-		return {"path": projected}
-
-	def __call__(self):
-		return self.nextDirection, self.nextMove
-		
-class LongPathfinder(AI):
-	def __init__(self):
-		AI.__init__(self)
-		
-	def calcMoves(self, body, direction, awareness, environment, hunger):
-		projected = set(self.path)
-		self.path = self.getPath(environment, body, "long")
-		self.nextDirection, self.nextMove = getMoveFromPath(body, direction)
-		return {"path": projected}
-
-	def __call__(self):
-		return self.nextDirection, self.nextMove
-		
-		
-class Hamiltonian(AI):
-	def __init__(self):
-		AI.__init__(self)
-		
-	def calcMoves(self, body, direction, awareness, environment, hunger):
-		self.path = self.getCycle(body, environment)
-		if self.path:
-			self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
-		else:
-			self.nextDirection, self.nextMove = self.getSafestMove(direction)
-		return {"path": set(self.path)}
-
-	def __call__(self):
-		return self.nextDirection, self.nextMove
-		
-		
-class FloodPathfinder(AI):
-	def __init__(self):
-		AI.__init__(self)
-		
-	def calcMoves(self, body, direction, awareness, environment, hunger):
-		projected = set(self.path)
-		self.path = self.getPath(environment, body, "short")
-		if self.path:
-			self.nextDirection, self.nextMove = self.getMoveFromPath(body, direction)
-		else:
-			self.openness = self.getOpenness(body, direction, environment)
-			self.nextDirection, self.nextMove = self.getSafestMove(direction)
-		return {"path": projected, "openness": self.openness}
-
-	def __call__(self):
-		return self.nextDirection, self.nextMove
-		
-class FloodFill(AI):
-	def __init__(self):
-		AI.__init__(self)
-		
-	def calcMoves(self, body, direction, awareness, environment, hunger):
-		self.openness = self.getOpenness(body, direction, environment)
-		self.nextDirection, self.nextMove = self.getSafestMove(direction)
-		return {"openness": self.openness}
-
-	def __call__(self):
-		return self.nextDirection, self.nextMove

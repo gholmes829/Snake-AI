@@ -29,12 +29,12 @@ b = perimeter + offset
 gridColors = ("lightBlue", "mediumBlue", "mediumBlue")  # color of GUI window background
 
 # FPS AND DISPLAY
-targetFPS = 30
+targetFPS = 60
 smoothness = 3  # controls how fast and smooth animations run
 
 # GENETICS
-populationSize = 500
-generations = 100
+populationSize = 250
+generations = 500
 displayTraining = False  # displays best snake after each generation during training
 
 # SNAKE
@@ -64,13 +64,13 @@ def getInfo() -> str:
 	"""
 	Provides basic info about settings in str format.
 	"""
-	return "    Map size: " + str(mapSize) + \
-		   "\n    Population: " + str(populationSize) + \
-		   "\n    Target generations: " + str(generations) + \
-		   "\n    Starting snake size: " + str(initialSnakeSize) + \
-		   "\n    Snake vision: " + str(maxSnakeVision) + \
-		   "\n    Smart shield: " + str(smartShield) + \
-		   "\n    Available CPU cores: " + str(cores)
+	return "    - Map size: " + str(mapSize) + \
+		   "\n    - Population: " + str(populationSize) + \
+		   "\n    - Target generations: " + str(generations) + \
+		   "\n    - Starting snake size: " + str(initialSnakeSize) + \
+		   "\n    - Snake vision: " + str(maxSnakeVision) + \
+		   "\n    - Smart shield: " + str(smartShield) + \
+		   "\n    - Available CPU cores: " + str(cores)
 
 def getDictInfo() -> dict:
 	"""

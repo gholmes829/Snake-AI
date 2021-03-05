@@ -239,8 +239,15 @@ class Snake:
 	@staticmethod
 	def metaFitness(snake) -> None:
 		"""Testing..."""
-		score = ((snake.score ** 3) * snake.age) / 1000000 + 1 if sum([p > 0 for p in snake.behavior.algorithmCount.values()]) == 3 else 0
-		#print(snake.behavior.algorithmCount, score)
+		heavyUseThreshold = 0.1
+		algoUsage = snake.behavior.algoUsage
+		usedGenetic = int(bool(algoUsage["genetic"]))
+		algosUsed = sum([p > 0 for p in algoUsage.values()])
+		totalDecisions = sum(algoUsage.values())
+		percents = [algoCount / totalDecisions for algoCount in algoUsage.values()]
+		#algosHeavilyUsed = sum([1 for percent in percents if percent > heavyUseThreshold])
+		excessiveReliance = any([1 for percent in percents if percent > 1 - heavyUseThreshold])
+		score = (1 + 0.5 * usedGenetic) * ((snake.score ** 3) * snake.age) / 10000000 / (0.05 * snake.behavior.numOpenAdjacent + 1) + 1 if not excessiveReliance else 0
 		return score  # meta controller training
 	
 	@staticmethod
@@ -248,7 +255,7 @@ class Snake:
 		"""
 		((snake_score)^3 * snake_age)/1000 + 1 if moved in all directions else 0
 		"""
-		return (((snake.score ** 3) * snake.age) / 1000 + 1) * int(all([p > 0 for p in snake.moveCount.values()])) ** (1 / (snake.behavior.numOpen + 1 if snake.behavior.numOpen in {1, 2} else 1))  # neural network snake training
+		return (((snake.score ** 3) * snake.age) / 1000 + 1) * int(all([p > 0 for p in snake.moveCount.values()])) ** (1 / (snake.behavior.numOpenAdjacent + 1 if snake.behavior.numOpenAdjacent in {1, 2} else 1))  # neural network snake training
 		#return ((snake.score ** 3) / snake.age) / 1000 + 1 if all([p > 0 for p in snake.moveCount.values()]) else 0  # neural network snake training
 	   
 	@staticmethod
