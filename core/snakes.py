@@ -79,6 +79,7 @@ class Snake:
 				 maxVision: int = 0,
 				 hungerFunc: callable = lambda size: 0,
 				 color: tuple = None,
+				 id: int = 0
 				 ) -> None:
 		"""
 		Initializes.
@@ -117,6 +118,10 @@ class Snake:
 		self.score = 0
 		self.hunger = 0
 		self.age = 0
+		
+		self.gamesPlayed = 0
+		
+		self.id = id
 
 		self.body = [(0, 0)] + [(-1 * (i + 1), 0) for i in range(self.size - 1)]
 		self.head = self.body[0]
@@ -128,6 +133,7 @@ class Snake:
 		self.moveTranslation = {(-1, 0): "left", (0, 1): "straight", (1, 0): "right"}
 		self.moveCount = {"left": 0, "straight": 0, "right": 0}  # number of times Snake moves in each direction
 		self.dead = False
+		self.resets = 0
 
 		self.awareness = {
 			"maxVision": maxVision,
@@ -223,7 +229,29 @@ class Snake:
 			"path": [],
 			"open": {(-1, 0): 0, (0, -1): 0, (1, 0): 0}
 		}
+		self.resets += 1
 		self.behavior.reset()
+		
+	def addIdChunk(self, sourceId):
+		parts = sourceId.split("|")
+		sourceId = parts[-1]
+		pieces = self.id.split("-")
+		lastSegment = pieces[-1].split("|")
+		#print(pieces, lastSegment, sourceId)
+		if sourceId == lastSegment[-1]:
+			if len(lastSegment) > 1:
+				num = int(lastSegment[0]) + 1 + parts[0]
+				lastSegment[-1] = str(num) + "|" + lastSegment[-1]
+			self.id = pieces[0]
+			for piece in pieces[1:-1]:
+				self.id += "-" + piece
+			self.id += "-" + lastSegment[-1]
+		else:
+			self.id += "-" + sourceId
+		
+	def updateId(self, newId):
+		# MAKE SET ID TRACK CHANGES, should have mutations and offspring as parameters, '2m' '1o' or smth like that or even 'parentId-new'...
+		self.id = newId
 		
 	def __len__(self):
 		"""Returns length of snake's body"""
@@ -241,13 +269,13 @@ class Snake:
 		"""Testing..."""
 		heavyUseThreshold = 0.1
 		algoUsage = snake.behavior.algoUsage
-		usedGenetic = int(bool(algoUsage["genetic"]))
+		#usedGenetic = int(bool(algoUsage["genetic"]))
 		algosUsed = sum([p > 0 for p in algoUsage.values()])
 		totalDecisions = sum(algoUsage.values())
 		percents = [algoCount / totalDecisions for algoCount in algoUsage.values()]
 		#algosHeavilyUsed = sum([1 for percent in percents if percent > heavyUseThreshold])
 		excessiveReliance = any([1 for percent in percents if percent > 1 - heavyUseThreshold])
-		score = (1 + 0.5 * usedGenetic) * ((snake.score ** 3) * snake.age) / 10000000 / (0.05 * snake.behavior.numOpenAdjacent + 1) + 1 if not excessiveReliance else 0
+		score = ((snake.score ** 3) * snake.age) / 10000000 / (0.01 * snake.behavior.numOpenAdjacent + 1) + 1 if not excessiveReliance else 0
 		return score  # meta controller training
 	
 	@staticmethod
@@ -255,7 +283,8 @@ class Snake:
 		"""
 		((snake_score)^3 * snake_age)/1000 + 1 if moved in all directions else 0
 		"""
-		return (((snake.score ** 3) * snake.age) / 1000 + 1) * int(all([p > 0 for p in snake.moveCount.values()])) ** (1 / (snake.behavior.numOpenAdjacent + 1 if snake.behavior.numOpenAdjacent in {1, 2} else 1))  # neural network snake training
+		# ** (1 / (snake.behavior.numOpenAdjacent + 1 if snake.behavior.numOpenAdjacent in {1, 2} else 1))
+		return (((snake.score ** 3) * snake.age) / 1000 + 1) * int(all([p > 0 for p in snake.moveCount.values()]))   # neural network snake training
 		#return ((snake.score ** 3) / snake.age) / 1000 + 1 if all([p > 0 for p in snake.moveCount.values()]) else 0  # neural network snake training
 	   
 	@staticmethod

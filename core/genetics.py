@@ -91,7 +91,7 @@ class Genetics:
 				 mergeTraits: callable = None,
 				 crossoverRate: float = 0.3,
 				 mutationRate: float = 0.7,
-				 trials: int = 3
+				 trials: int = 4
 				 ) -> None:
 		"""
 		Initializes.
@@ -131,6 +131,9 @@ class Genetics:
 			"best": {"object": None, "fitness": 0, "score": 0},
 			"population": [{"object": member, "fitness": 0, "score": 0} for member in self.population]
 		}
+		
+		self.ids = {member.id for member in self.population}
+		self.nextId = np.base_repr(int(max(self.ids, key = lambda memberId: int(memberId, 36)), 36) + 1, 36)
 
 	def evolve(self) -> None:
 		"""Evolves population."""
@@ -147,6 +150,8 @@ class Genetics:
 			self.bestFitness = self.generation["best"]["fitness"]
 
 		self.population = self._epigenetics([m["object"] for m in self.generation["population"]][:self.size])
+		self.ids = {member.id for member in self.population}
+		assert len(self.ids) == len(self.population)  # ids are unique
 		#pr.disable()
 		#stats = pstats.Stats(pr).sort_stats("cumulative")
 		#stats.print_stats(30)
@@ -171,23 +176,28 @@ class Genetics:
 
 		"""
 		scores = [snake["score"] for snake in self.generation["population"]]
-		maxScore = max(scores)
+		maxAvgScoreIndex = np.argmax(scores)
+		maxAvgScore = scores[maxAvgScoreIndex]
+		maxAvgScoreSnakeId = self.generation["population"][maxAvgScoreIndex]["object"].id
 		avgScore = np.mean(scores)
 		
 		fitnesses = [snake["fitness"] for snake in self.generation["population"]]
 		top10AvgFitness = np.mean(fitnesses[:int(0.1 * self.size)])
 		top25AvgFitness = np.mean(fitnesses[:int(0.25 * self.size)])
 		avgFitness = np.mean(fitnesses)
-		bestFitness = np.max(fitnesses)
+		bestFitnessIndex = np.argmax(fitnesses)
+		bestFitness = fitnesses[bestFitnessIndex]
+		bestFitnessSnakeId = self.generation["population"][bestFitnessIndex]["object"].id
 		
 		print("RESULTS FOR GEN:", self.gen)
-		print("    Highest score:", maxScore)
-		print("    Average score:", round(avgScore, 5))
-		print("    Average fitness:", round(avgFitness, 5))
-		print("    Best fitness:", round(bestFitness, 5))
-		print("    Top 10% fitness:", round(top10AvgFitness, 5))
-		print("    Top 25% fitness:", round(top25AvgFitness, 5))
+		print("    Highest average core, id:", str(round(maxAvgScore, 2)) + ",", maxAvgScoreSnakeId)
+		print("    Average score:", round(avgScore, 2))
+		print("    Average fitness:", round(avgFitness, 2))
+		print("    Best fitness, id:", str(round(bestFitness, 2)) + ",", bestFitnessSnakeId)
+		print("    Top 10% fitness:", round(top10AvgFitness, 2))
+		print("    Top 25% fitness:", round(top25AvgFitness, 2))
 
+		# PRINT SMTH TO INDICATE IF SNAKE HAS MUTATED EVEN IF IT HAS THE SAME ID, __eq__ in nn??
 
 	def cleanup(self) -> None:
 		"""Cleans up multiprocessing pool"""
@@ -210,7 +220,6 @@ class Genetics:
 		list: list of members paired with their stats in form of {"object": MemberType, "fitness": float, "score": float}
 		"""
 		members = []
-		
 		if parallelize and settings.cores > 1:
 			try:
 				trials = [self.pool.map(self.task, population) for _ in range(self.trials)]  # parallelized
@@ -228,7 +237,7 @@ class Genetics:
 		
 		for i in range(len(population)):
 			fitness = np.mean([trials[j][i]["fitness"] for j in range(self.trials)])
-			score = np.max([trials[j][i]["score"] for j in range(self.trials)])
+			score = np.mean([trials[j][i]["score"] for j in range(self.trials)])
 			members.append({"object": population[i], "fitness": fitness, "score": score})
 
 		return members
@@ -366,8 +375,15 @@ class Genetics:
 		if self.mergeTraits is not None:
 			self.mergeTraits(child1, parent1, parent2)
 			self.mergeTraits(child2, parent1, parent2)
-		return {True: child1, False: child2}[fitness1 > fitness2]
-
+		best, parentId = (child1, parent2.id) if fitness1 > fitness2 else (child2, parent2.id)
+		self._updateMemberId(best)
+		
+		return best
+		
+	def _updateMemberId(self, member):
+		member.updateId(self.nextId)
+		self.nextId = np.base_repr(int(self.nextId, 36) + 1, 36)
+		
 	def _makeMutants(self) -> list:
 		"""
 		Make mutants from given population.
@@ -380,8 +396,8 @@ class Genetics:
 		stronglyMutated = []
 		for _ in range(int(0.1 * self.mutations)):
 			mutant = deepcopy(self.population[randint(0, self.size - 1)])
-			for _ in range(randint(2, 4)):
-				mutant = self._mutate(mutant)
+			self._updateMemberId(mutant)
+			mutant = self._mutate(mutant, numMuations=randint(2, 4), updateId=False)
 			stronglyMutated.append(mutant)
 		return weaklyMutated + stronglyMutated
 		
@@ -403,7 +419,7 @@ class Genetics:
 		
 		return superMutants
 
-	def _mutate(self, member: object) -> object:
+	def _mutate(self, member: object, numMutations=1, updateId: bool = True) -> object:
 		"""
 		Provides mutated clone of member.
 
@@ -420,18 +436,22 @@ class Genetics:
 		"""
 		mutant = deepcopy(member)
 		brain = mutant.getBrain()
-		target = choice(("weights", "biases"))
+		
+		for _ in range(numMutations):
+			target = choice(("weights", "biases"))
 
-		if target == "weights":
-			randLayer = randint(0, len(brain["weights"]) - 1)
-			randNeuron = randint(0, len(brain["weights"][randLayer]) - 1)
-			randWeight = randint(0, len(brain["weights"][randLayer][randNeuron]) - 1)
-			brain["weights"][randLayer][randNeuron][randWeight] = np.random.randn()
-		else:
-			randLayer = randint(0, len(brain["biases"]) - 1)
-			randBias = randint(0, len(brain["biases"][randLayer]) - 1)
-			brain["biases"][randLayer][randBias] = np.random.randn()
-
+			if target == "weights":
+				randLayer = randint(0, len(brain["weights"]) - 1)
+				randNeuron = randint(0, len(brain["weights"][randLayer]) - 1)
+				randWeight = randint(0, len(brain["weights"][randLayer][randNeuron]) - 1)
+				brain["weights"][randLayer][randNeuron][randWeight] = np.random.randn()
+			else:
+				randLayer = randint(0, len(brain["biases"]) - 1)
+				randBias = randint(0, len(brain["biases"][randLayer]) - 1)
+				brain["biases"][randLayer][randBias] = np.random.randn()
+			if updateId:
+				self._updateMemberId(mutant)
+				
 		return mutant
 
 	def _epigenetics(self, population: list) -> list:

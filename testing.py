@@ -1,4 +1,8 @@
-from core.searching import pathfind, hamiltonian, longestPath
+"""
+Testing environment and unit tests in developments...
+"""
+
+from core.brain import pathfind, hamiltonian, longestPath
 
 # PATHFINDING
 

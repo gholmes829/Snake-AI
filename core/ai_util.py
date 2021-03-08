@@ -5,7 +5,69 @@ from core import brain
 import numpy as np
 
 def getNetworkDecision(network, body, direction, vision):
+	"""
+	features = vision
+	# ------------------------------------------------------------------------------------------------------------------------------------
+	# ENSEMBLE-LIKE BAYESIAN ANALYSIS
+	
+	m = 50  # number of ensembles
+	n = features.shape[0]  # number of input features
+	
+	# noise parameters based on normal distribution but could change model to multi modal or other distribution
+	mu = 0  # normal mean
+	sigma = 0.5  # normal std
+	
+	ensembles = np.zeros((m+1, n))
+	
+	ensembles[0] = features  # normal input
+	for i in range(m):  # generate ensembles with noise
+		ensembles[i+1] = features + np.random.normal(mu, sigma, n)  # mean, std, shape
+	
+	output = network.feedForward(ensembles)  # m x 3
+	# would it be useful to take softmax of output to get probabilistic view?
+	
+	mu_hat = output.mean(axis=0)
+	cov = np.cov(output, rowvar=False)  # get covariance matrix 3 x 3
+	certainty = brain.FFNN.softmax((1 - cov.diagonal()))  # would this measure how much each decision varied with respect to pertubations in input?
+	final = output[0] * certainty
+	#equal = np.argmax(final) == np.argmax(out)
+	#if not equal:
+		#print(normal)
+		#print(final)
+		#print()
+	#out = output[0]
+	#normal = output[0]
+	decision = np.argmax(final)
+	#if np.argmax(normal) != decision:
+		#print(out)
+		#print(normal)
+		#print(final)
+		#print(np.argmax(normal), decision)
+		#print()
+	# ------------------------------------------------------------------------------------------------------------------------------------
+	"""
+
+
+
+
+
+
+
+
+
 	decision = np.argmax(network.feedForward(vision))
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	nextMove = {0: (-1, 0), 1: (0, 1), 2: (1, 0)}[decision]
 	nextDirection = brain.getOrientedDirection(direction, nextMove, "local")
 	return nextDirection, nextMove

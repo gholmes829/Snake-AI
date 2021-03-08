@@ -121,7 +121,7 @@ class Environment:
 		-------
 		bool: if Snake is dead
 		"""
-		return not (self.snake.dead or self.snakeWon)
+		return not self.snake.dead
 
 	def getData(self) -> dict:
 		"""
@@ -175,6 +175,7 @@ class Environment:
 				self.gameMap[pos] = FOOD
 			else:
 				self.snakeWon = True
+				self.snake.kill()
 				print("WIN!")
 		else:
 			self.foodLog.append(pos)

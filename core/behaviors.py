@@ -432,46 +432,41 @@ class Hierarchical:
 			manhattanMovesToFood
 		])
 		
-		"""
 		# ------------------------------------------------------------------------------------------------------------------------------------
 		# ENSEMBLE-LIKE BAYESIAN ANALYSIS
 		
-		m = 10  # number of ensembles
+		m = 25  # number of ensembles
 		n = features.shape[0]  # number of input features
 		
 		# noise parameters based on normal distribution but could change model to multi modal or other distribution
 		mu = 0  # normal mean
-		sigma = 1  # normal std
+		sigma = 0.075  # normal std
 		
-		ensembles = np.zeros((m, n))
+		ensembles = np.zeros((m+1, n))
 		
+		ensembles[0] = features  # normal input
 		for i in range(m):  # generate ensembles with noise
-			ensembles[i] = features + np.random.normal(mu, sigma, n)  # mean, std, shape
+			ensembles[i+1] = features + np.random.normal(mu, sigma, n)  # mean, std, shape
 		
 		output = self.metaNetwork.feedForward(ensembles)  # m x 3
 		# would it be useful to take softmax of output to get probabilistic view?
 		
-		cov = numpy.cov(output)  # get covariance matrix 3 x 3
-		variance = cov.diagonal()  # would this measure how much each decision varied with respect to pertubations in input?
-		muHat = variance.mean()  # would getting the mean of uncertainties give me an overall indicator of uncertainty in decisions?
-		sigmaHat = variance.std()  # would this be helpful in any way?
-		
-		# would eigenspace be useful for analysis? Maybe find components?
-		eigVals, eigVecs = numpy.linalg.eig(covariance)  # find unit eigen vectors and corresponding eigen values of covariance matrix
-		idxOrder = eigVals.argsort()[::-1]  # sort by descending order
-		eigVals = eigVals[idxOrder]  # largest to smallest
-		eigVecs = eigVecs[:,idxOrder]  # columns correspond with eigen eigVals
-		
-		# analysis?
-		
-		# how to apply bayesian inference? Bayes decision theory?
-		
-		# feed uncertainty back into decision making? If very low confidence use very safe algorithm like floodfill?
+		mu_hat = output.mean(axis=0)
+		cov = np.cov(output, rowvar=False)  # get covariance matrix 3 x 3
+		certainty = brain.FFNN.softmax((1 - cov.diagonal()))  # would this measure how much each decision varied with respect to pertubations in input?
+		final = mu_hat * certainty
+		#equal = np.argmax(final) == np.argmax(out)
+		#if not equal:
+			#print(normal)
+			#print(final)
+			#print()
+		normal = brain.FFNN.softmax(out)
+		self.algoIndex = np.argmax(final)
 		# ------------------------------------------------------------------------------------------------------------------------------------
-		"""
+
 		
 		
-		self.algoIndex = np.argmax(self.metaNetwork.feedForward(features))
+		#self.algoIndex = np.argmax(self.metaNetwork.feedForward(features))
 		self.algoName = self.algoIndexToName[self.algoIndex]
 		#print(algoName)
 		self.algoUsage[self.algoName] += 1

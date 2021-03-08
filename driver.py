@@ -181,8 +181,9 @@ class Driver:
 			self._checkSave()
 			print()
 		else:
-			print("\nTime elapsed:", round(elapsed, 5), "secs")
-			print("Average snake size, time across", games, "games:", round(sum(scores)/games, 2), "points,", round(elapsed/games, 5), "secs")
+			print("\nTime elapsed across", str(games) + " games:", round(elapsed, 5), "secs")
+			print("Average snake score:", round(sum(scores)/games, 2))
+			print("Scores std:", round(np.std(scores), 3))
 
 	def _loadSnakeData(self, path):
 		data = self.loadNPZ(path)
@@ -285,38 +286,36 @@ class Driver:
 			print("    Generation took:", generationTime)
 			print("    Total time elapsed:", totalTime)
 			print("    Time of day:", currentTime)
-			bestSnake = snakeDNA.generation["best"]["object"]
+			bestSnake = snakeDNA.generation["best"]["object"]  # debug delete
 			
 			# RECORD IDX OF LEADING SNAKE HERE OR FROM GENETIC
 			
-			if algoChoice in {"Multi Controller", "Hierarchical Controller"}:  # delete
-				trials = 5
-				scores = []
+			
+			trials = 10
+			scores = []
+			if algoChoice in {"Multi Controller", "Hierarchical Controller"}:
 				algos = bestSnake.behavior.algoUsage.keys()
 				avgUsage = {algo: 0 for algo in algos}
-				for _ in range(trials):
-					game.playTrainingGame(bestSnake, render=False)
-					scores.append(bestSnake.score)
+			for _ in range(trials):
+				game.playTrainingGame(bestSnake, render=False)
+				scores.append(bestSnake.score)
+				if algoChoice in {"Multi Controller", "Hierarchical Controller"}:
 					for algo in algos:
 						avgUsage[algo] += bestSnake.behavior.algoUsage[algo]
+			avgScore = round(sum(scores)/trials, 3)
+			print("    Best snake scores, avg score (n=" + str(trials) + "):", str(scores) + ",", avgScore)
+			if algoChoice in {"Multi Controller", "Hierarchical Controller"}:
 				avgUsage = {algo: round(avgUsage[algo]/trials, 3) for algo in algos}
-				avgScore = round(sum(scores)/trials, 3)
-				#avgAlgos = {}
-				#for algo in bestSnake.behavior.algoUsage:
-					#avgAlgos[algo] = 0
-					#for snakeData in snakeDNA.generation["population"]:
-					#	avgAlgos[algo] += snakeData["object"].behavior.algoUsage[algo]
-					#avgAlgos[algo] = round(avgAlgos[algo] / len(snakeDNA.generation["population"]), 2)
-				#print("    Average algorithm use:", avgAlgos)
 				print("    Best snake average algorithm use (n=" + str(trials) + "):", avgUsage)
-				print("    Best snake average score over (n=" + str(trials) + "):", avgScore)
+			
 			
 			if settings.displayTraining:
 				game.playTrainingGame(bestSnake, render=False)  # best snake of gen plays game in GUI window
 
 			# save data of generation to .../dna/evolution_x/generation_y/analytics.json
 			generationPath = os.path.join(evolutionPath, "generation_" + str(gen))
-			data = snakeDNA.getGenStats().update({"time": elapsed})
+			data = snakeDNA.getGenStats()
+			data.update({"time": elapsed})
 			self._logGenerationData(data, generationPath)
 
 			# saves neural net of best snake from generation to .../dna/evolution_x/generation_y/model.npz
@@ -379,7 +378,7 @@ class Driver:
 		else:  # training is neural networks
 			behaviorKwargs.update({"architecture": settings.networkArchitecture})
 			
-		return [snakes.Snake(algorithms[algoIndex], behaviorArgs=behaviorArgs, behaviorKwargs=behaviorKwargs, **snakeKwargs) for _ in range(population)]	
+		return [snakes.Snake(algorithms[algoIndex], behaviorArgs=behaviorArgs, behaviorKwargs=behaviorKwargs, id=np.base_repr(i+1, 36), **snakeKwargs) for i in range(population)]	
 		
 	def _saveSnakeData(self, model, path):
 		weights = np.array(model["weights"], dtype=object)

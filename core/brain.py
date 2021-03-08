@@ -131,7 +131,7 @@ class FFNN:
 		np.ndarray: input after fed through neural network
 		"""
 		for w, b in zip(self.weights, self.biases):
-			inputs = self.activation(w @ inputs + b)
+			inputs = self.activation(inputs @ w.T + b)
 		return inputs
 
 	@staticmethod
