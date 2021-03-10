@@ -16,7 +16,8 @@ from time import time
 from datetime import datetime
 import psutil
 
-from core import settings, ui, games
+from core import settings, games
+from core.ui import ui
 from core.game import environment, snakes
 from core.genetics import training, plotting
 

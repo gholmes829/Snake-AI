@@ -15,8 +15,9 @@ import numpy as np
 import keyboard
 
 from core import settings
-from core.game import environment, snakes, behaviors, graphics
-from core.game.graphics import Engine
+from core.game import environment, snakes, behaviors
+from core.ui import graphics
+from core.ui.graphics import Engine
 
 __author__ = "Grant Holmes"
 __email__ = "g.holmes429@gmail.com"

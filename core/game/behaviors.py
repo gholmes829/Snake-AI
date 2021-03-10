@@ -377,10 +377,11 @@ class Hierarchical:
 		# calculate input features
 		relativeSnakeSize = len(body) / environment.area
 		
-		foodCloseness = 1 / brain.distOpt(body[0], food)
-		tailCloseness = 1 / brain.distOpt(body[0], body[-1])
+		# REMOVE UNNECESARY FEATURES
+		#foodCloseness = 1 / brain.distOpt(body[0], food)
+		#tailCloseness = 1 / brain.distOpt(body[0], body[-1])
 		
-		centerCloseness = 1 / (brain.distOpt(body[0], (int(environment.size[0]/2), int(environment.size[1]/2))) + 1)
+		#centerCloseness = 1 / (brain.distOpt(body[0], (int(environment.size[0]/2), int(environment.size[1]/2))) + 1)
 			
 		# danger as openness (need flood fill to search for openness, expensive)
 		#leftSpace = self.openness[-1, 0] / environment.area
@@ -395,21 +396,21 @@ class Hierarchical:
 		
 		self.numOpenAdjacent = 3 - leftDanger - forwardDanger - rightDanger
 		
-		leftDangerFood = int(environment[food[0] - 1, food[1]] == -1)
-		upDangerFood = int(environment[food[0], food[1] - 1] == -1)
-		rightDangerFood = int(environment[food[0] + 1, food[1]] == -1)
-		downDangerFood = int(environment[food[0], food[1] + 1] == -1)
+		#leftDangerFood = int(environment[food[0] - 1, food[1]] == -1)
+		#upDangerFood = int(environment[food[0], food[1] - 1] == -1)
+		#rightDangerFood = int(environment[food[0] + 1, food[1]] == -1)
+		#downDangerFood = int(environment[food[0], food[1] + 1] == -1)
 		
-		leftDangerTail = int(environment[tail[0] - 1, tail[1]] == -1)
-		upDangerTail = int(environment[tail[0], tail[1] - 1] == -1)
-		rightDangerTail = int(environment[tail[0] + 1, tail[1]] == -1)
-		downDangerTail = int(environment[tail[0], tail[1] + 1] == -1)
+		#leftDangerTail = int(environment[tail[0] - 1, tail[1]] == -1)
+		#upDangerTail = int(environment[tail[0], tail[1] - 1] == -1)
+		#rightDangerTail = int(environment[tail[0] + 1, tail[1]] == -1)
+		#downDangerTail = int(environment[tail[0], tail[1] + 1] == -1)
 		
 		# wall dist
-		wallUp = 1 / (body[0][1] + 1)
-		wallRight = 1 / (environment.size[0] - head[0] + 1)
-		wallDown = 1 / (environment.size[1] - head[1] + 1)
-		wallLeft = 1 / (head[0] + 1)
+		#wallUp = 1 / (body[0][1] + 1)
+		#wallRight = 1 / (environment.size[0] - head[0] + 1)
+		#wallDown = 1 / (environment.size[1] - head[1] + 1)
+		#wallLeft = 1 / (head[0] + 1)
 		
 		# food relations
 		relativeHunger = self.prevSnakeHunger/awareness["maxHunger"]

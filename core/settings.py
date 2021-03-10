@@ -33,7 +33,7 @@ targetFPS = 60
 smoothness = 3  # controls how fast and smooth animations run
 
 # GENETICS
-populationSize = 750
+populationSize = 1000
 generations = 10000
 
 displayTraining = False  # displays best snake after each generation during training

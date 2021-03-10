@@ -91,7 +91,7 @@ class Genetics:
 				 mergeTraits: callable = None,
 				 crossoverRate: float = 0.3,
 				 mutationRate: float = 0.7,
-				 trials: int = 4
+				 trials: int = 5
 				 ) -> None:
 		"""
 		Initializes.
