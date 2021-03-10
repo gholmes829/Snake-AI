@@ -35,6 +35,7 @@ smoothness = 3  # controls how fast and smooth animations run
 # GENETICS
 populationSize = 750
 generations = 10000
+
 displayTraining = False  # displays best snake after each generation during training
 
 # SNAKE
