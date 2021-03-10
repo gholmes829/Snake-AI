@@ -16,7 +16,9 @@ from time import time
 from datetime import datetime
 import psutil
 
-from core import genetics, game, environments, snakes, settings
+from core import settings, ui, games
+from core.game import environment, snakes
+from core.genetics import training, plotting
 
 __author__ = "Grant Holmes"
 __email__ = "g.holmes429@gmail.com"
@@ -36,8 +38,6 @@ class Driver:
 		Path to dna folder
 	modelPath:
 		path to model folder
-	seedPath:
-		path to model/seeds
 	
 	Public Methods
 	--------------
@@ -46,176 +46,128 @@ class Driver:
 	"""
 	def __init__(self) -> None:
 		"""Gets paths to necessary folders."""
-		self.currGameEnvironment = None
-		self.replayPath = os.path.join(os.getcwd(), "replays")
-		self.dnaPath = os.path.join(os.getcwd(), "dna")
-		self.modelPath = os.path.join(os.getcwd(), "trained")
-		self.seedPath = os.path.join(self.modelPath, "seeds")
+		self.prevGameEnvironment = None
+		
+		self.paths = {}
+		self.paths["current"] = os.getcwd()
+		self.paths["data"] = os.path.join(self.paths["current"], "data")
+		self.paths["replays"] = os.path.join(self.paths["data"], "replays")
+		self.paths["dna"] = os.path.join(self.paths["data"], "dna")
+		self.paths["trained"] = os.path.join(self.paths["data"], "trained")
+		self.paths["neural_net"] = os.path.join(self.paths["trained"], "neural_net")
+		self.paths["multi"] = os.path.join(self.paths["trained"], "multi")
+		self.paths["hierarchical"] = os.path.join(self.paths["trained"], "hierarchical")
 		
 		print()
 		print("        +" + "="*8 + "+")
-		#print("        |--------|")
 		print("        |SNAKE AI|")
-		#print("        |--------|")
 		print("        +" + "="*8 + "+")
+		print()
 		
-		print("\nInitialized with the following settings:")
+		print("Initialized with the following settings:")
 		print(settings.getInfo(), "\n")
 
 	def run(self) -> None:
 		"""Allows user to select mode, runs mode."""
 		modes = [
-			self._playClassic,
-			self._playAI,
-			self._trainAI,
-			self._watchReplay,
-			self._watchSaved,
-			Driver._exit
+			("Play Classic", self._playClassic),
+			("Play AI", self._playAI),
+			("Replay Last Game", self._watchReplay),
+			("Watch Saved", self._watchSaved),
+			("Train AI", self._trainAI),
+			("Exit", lambda: sys.exit())
 		]
 		
-		mode = None
-		while mode != 6:
-			index, _ = self.getSelection("Play Classic", "Play AI", "Train AI", "Replay Last Game", "Watch Saved", "Exit", msg="Select mode:")
-			modes[index]()
-			print()
+		ui.runModes(modes)
 			
 			
 	def _playClassic(self) -> None:
 		"""Opens GUI window and lets user play Snake with keyboard controls."""
-		self.currGameEnvironment = environments.Environment(snakes.Snake.Player(), settings.mapSize)
+		snake = snakes.Snake.Player()
+		gameEnvironment = environment.Environment(snake, settings.mapSize)
+		print("\nGet ready...")
+		games.playPlayerGame(gameEnvironment)
+		finalScore = snake.score
+		print("Final score: " + str(finalScore))
 		print()
-		game.playPlayerGame(self.currGameEnvironment)
-		print()
-		self._checkSave()
+		ui.checkSave(gameEnvironment, self._saveGame)
+		self.prevGameEnvironment = gameEnvironment
 		
 	def _playAI(self) -> None:
 		"""User selects saved model from .../dna/trained. Opens GUI window and AI plays game."""
 		# ask user how many games?
 		# check npz format with same size networks or something like that? Cant save certain things...??
-		behaviorKwargs = {}
-		behaviorArgs = []
 		
-		# make behavior args
-		snakeKwargs = {
-			"initialSize": settings.initialSnakeSize,
-			"maxVision": settings.maxSnakeVision,
-			"hungerFunc": settings.hungerFunc,
-		}
+		algoIndex, algoChoice = ui.getSelection("Neural Network", "Multi", "Hierarchical", "Cycle", "Pathfinding", "Floodfill", "Back", msg="\nSelect AI algorithm:", end="\n\n")
 		
-		algorithms = ["neural network", "multi", "hierarchical", "cycle", "pathfinder", "floodfill"]
-		algoIndex, choice = self.getSelection("Neural Network", "Multi", "Hierarchical", "Cycle", "Pathfinding", "Floodfill", "Back", msg="\nSelect AI algorithm:")
-		
-		trainedFiles = os.listdir(self.modelPath)
-		trainedFiles.remove("seeds")
-		
-		if choice == "Back":
-			return
-		elif choice in {"Neural Network", "Multi"}:
-			if len(trainedFiles) == 0:
-				print("No trained AI!\n")
-				return self._playAI()  # go back a page in a sense
-			modelIndex, modelChoice = self.getSelection(*trainedFiles, "Back", msg="\nSelect AI to use:")
-			if modelChoice == "Back":
-				return self._playAI()
-			modelFile = trainedFiles[modelIndex]
-			modelPath = os.path.join(self.modelPath, modelFile)
-			data = self._loadSnakeData(modelPath)
-			snakeKwargs["color"] = tuple([int(value) for value in data["color"]])
-			behaviorKwargs.update({
-				"weights": data["weights"],
-				"biases": data["biases"],
-				"architecture": data["architecture"],
-				"shielded": settings.smartShield
-			})
-			if choice == "Multi":
-				pass  # anything extra that multi needs
-		elif choice == "Hierarchical":
-			networkData = []
-			selected = set()
-			if len(trainedFiles) < 3:
-				print("Not enough trained AI!\n")
-				return self._playAI()  # go back a page in a sense
-			for i in range(3):  # remove already selected items from list once chosen??
-				modelIndex, modelChoice = self.getSelection(*trainedFiles, "Back", msg="\nSelect AI not already chosen to use:", isValid = lambda idx: not (idx-1) in selected)
-				if modelChoice == "Back":
-					return self._playAI()
-				selected.add(modelIndex)
-				modelFile = trainedFiles[modelIndex]
-				modelPath = os.path.join(self.modelPath, modelFile)
-				data = self._loadSnakeData(modelPath)
-				networkData.append({
-					"weights": data["weights"],
-					"biases": data["biases"],
-					"architecture": data["architecture"],
-				})
+		if algoChoice != "Back" and (snake := self._makeSnake(algoIndex, algoChoice)) is not None:
+			numGames = ui.getValidInput("How many games should be played?", dtype=int, lower=1, end="\n")
 			
-			behaviorKwargs.update({
-				"networkData": networkData,
-				"shielded": settings.smartShield
-			})			
-				
-		elif choice == "Pathfinding":
-			behaviorKwargs = {"floodfill": True}
-		elif choice == "Floodfill":
-			pass
-		elif choice == "Cycle":
-			snakeKwargs["hungerFunc"] = lambda size: 1000  # so snkae does starve... shortcuts??
+			scores = []			
+			timer = time()
+			
+			if algoChoice in {"Multi", "Hierarchical"}:
+				algos = snake.behavior.algoUsage.keys()
+				avgUsage = {algo: 0 for algo in algos}
+			
+			for i in range(numGames):
+				gameEnvironment = environment.Environment(snake, settings.mapSize)
+				#gameEnvironment = environment.Environment(snake, settings.mapSize, origin=(3, 0))  # for cycle to win or get close when odd
+				games.playGame(gameEnvironment, render=(not (numGames-1)))
+				scores.append(snake.size)
+				if algoChoice in {"Multi", "Hierarchical"}:
+					for algo in algos:
+						avgUsage[algo] += snake.behavior.algoUsage[algo]
+				print("Game", str(i+1) + " snake size:", snake.size)
+			elapsed = time() - timer
+			if not numGames-1:
+				print()
+				ui.checkSave(gameEnvironment, self._saveGame)
+				self.prevGameEnvironment = gameEnvironment
+			else:
+				print("\nTime elapsed across", str(numGames) + " games:", round(elapsed, 5), "secs")
+				print("Average snake score:", round(sum(scores)/numGames, 2))
+				print("Scores std:", round(np.std(scores), 3))
+				if algoChoice in {"Multi", "Hierarchical"}:
+					avgUsage = {algo: round(avgUsage[algo]/numGames, 3) for algo in algos}
+					print("Snake average algorithm use (n=" + str(numGames) + "):", avgUsage)
 
-		snake = snakes.Snake(algorithms[algoIndex], behaviorArgs=behaviorArgs, behaviorKwargs=behaviorKwargs, **snakeKwargs)
-			
-		print()
-		games = self.getValidInput("How many games should be played?", dtype=int, lower=1)
-			
-		scores = []
-		print()
-		timer = time()
-		for i in range(games):
-			self.currGameEnvironment = environments.Environment(snake, settings.mapSize)
-			#self.currGameEnvironment = environments.Environment(snake, settings.mapSize, origin=(3, 0))  # for cycle to win or get close when odd
-			game.playGame(self.currGameEnvironment, render=(not (games-1)))
-			scores.append(snake.size)
-			print("Game", str(i+1) + " snake size:", snake.size)
-		elapsed = time() - timer
-		if not games-1:
-			print()
-			self._checkSave()
-			print()
+	def _watchReplay(self) -> None:
+		"""Gets data from last game and replays it in GUI window"""
+		if self.prevGameEnvironment is None:
+			print("\nNo game to re-watch!")
 		else:
-			print("\nTime elapsed across", str(games) + " games:", round(elapsed, 5), "secs")
-			print("Average snake score:", round(sum(scores)/games, 2))
-			print("Scores std:", round(np.std(scores), 3))
+			data = self.prevGameEnvironment.getData()
+			self._replay(data["moves"], data["origin"], data["food"], data["mapSize"], data["color"])
 
-	def _loadSnakeData(self, path):
-		data = self.loadNPZ(path)
-		return {
-			"weights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
-			"biases": [np.asarray(layer, dtype=float) for layer in data["biases"]],
-			"architecture": data["architecture"],
-			"color": data["color"] 
-		}
-	def _checkSave(self) -> None:
-		"""Checks to see if user wants to save last game to .../replays. If so, user inputs file name."""
-		index, _ = self.getSelection("Yes", "No", msg="Save game as replay?")
-		if not index:
+	def _watchSaved(self) -> None:
+		"""Allows user to select saevd game from .../replays and replays it in GUI window"""
+		replayFiles = os.listdir(self.paths["replays"])
+		numReplays = len(replayFiles)
+		if len(replayFiles) == 0:
+			print("\nNo saved replays!")
+		else:
 			print()
-			self._saveGame(self.getValidInput("File name?"))
+			msg = "Select game to replay:"
+			for i, gameSave in enumerate(replayFiles, start=1):
+				msg += "\n\t" + str(i) + ") " + str(gameSave)
+			backIndex = numReplays + 1
+			msg += "\n\t" + str(backIndex) + ") Back"
+			index = ui.getValidInput(msg, dtype=int, valid=range(1, numReplays + 2)) - 1
 
-	# DEF REFACTOR GENETIC SPLITTING UP
-			
-	def _saveGame(self, name: str) -> None:
-		"""
-		Saves game environment to .json file in .../replay folder.
+			if index != backIndex-1:
+				gameName = replayFiles[index]
 
-		Parameters
-		----------
-		name: str
-			File name for saved game file
-		"""
-		if not (len(name) > len(".json") and name[-1 * len(".json"):] == ".json"):
-			name += ".json"
-		data = self.currGameEnvironment.getData()
-		with open(os.path.join(self.replayPath, name), "w") as f:
-			json.dump(data, f, indent=4)
+				with open(self.paths["replays"] + "/" + gameName) as f:
+					gameData = json.load(f)
+
+				moves = [tuple(move) for move in gameData["moves"]]
+				origin = tuple(gameData["origin"])
+				food = [tuple(food) for food in gameData["food"]]
+				mapSize = tuple(gameData["mapSize"])
+				color = tuple(gameData["color"])
+				self._replay(moves, origin, food, mapSize, color)
+
 
 	def _trainAI(self) -> None:
 		"""Trains AI snakes. Saves data and models in ../dna folder. Creates new folder for each training session."""
@@ -227,213 +179,126 @@ class Driver:
 			print("\nError: Population size must be at least 10. Change size in settings.py.")
 			return
 		
-		algoIndex, algoChoice = self.getSelection("NN Controller", "Multi Controller", "Hierarchical Controller", "Back", msg="\nSelect training type:")
-		if algoChoice == "Back":
-			return
-
-		trainedFiles = os.listdir(self.modelPath)
-		trainedFiles.remove("seeds")
-		
-		if len(trainedFiles) == 0:
-			print("No trained AI!\n")
-			return self._trainAI()
+		algoIndex, algoChoice = ui.getSelection("Neural Network", "Multi", "Hierarchical", "Back", msg="\nSelect training type:")
+		if algoChoice != "Back" and (initialPopulation := self._makeInitialPopulation(algoIndex, algoChoice, population)) is not None:
+			colorCross = None
+			#colorCross = snakes.Snake.mergeTraits  # include color crossing
+			snakeDNA = training.Genetics(initialPopulation, games.playTrainingGame, mergeTraits=colorCross)
+			evolution = plotting.EvolutionGraph()
+			evolution.display()
 			
-		if len(trainedFiles) < 3 and algoChoiec == "Hierarchical Controller":
-			print("Not enough trained AI!\n")
-			return self._trainAI()
+			initialBest = snakeDNA.generation["best"]["object"]
 			
-		initialPopulation = self._makeInitialPopulation(algoChoice, algoIndex, trainedFiles, population)
-		task = game.playTrainingGame
-		colorCross = None
-		#colorCross = snakes.Snake.mergeTraits  # include color crossing
-		snakeDNA = genetics.Genetics(initialPopulation, task, mergeTraits=colorCross)
-		trainingTimer = time()
-		
-		# initialize paths and files
-		dnaFiles = os.listdir(self.dnaPath)
-		if len(dnaFiles) > 0:
-			currEvolution = max([int(file[file.index("_")+1:]) for file in dnaFiles if file[:10] == "evolution_"]) + 1
-		else:
-			currEvolution = 1
- 
-		evolutionPath = os.path.join(self.dnaPath, "evolution_" + str(currEvolution))
-		os.mkdir(evolutionPath)
-		data = {
-			"evolution": currEvolution,
-			"settings": settings.getDictInfo(),
-			"fitness": initialPopulation[0].fitness.__doc__[9:-9],
-			"architecture": settings.networkArchitecture
-		}
-
-		# write settings for this training session
-		with open(os.path.join(evolutionPath, "settings.json"), "w") as f:
-			json.dump(data, f, indent=4)
-		
-		# train each generation
-		print("\nPOPULATION SIZE:", population, "\nGENERATIONS:", generations, "\n")
-		for gen in range(1, generations + 1):
-			timer = time()
-			snakeDNA.evolve()
-			
-			elapsed = round(time() - timer, 2)
-			elapsedTotal = round(time() - trainingTimer, 2)
-			currentTime = datetime.now().strftime("%H:%M:%S")
-			generationTime = str(int(elapsed//3600)) + " hrs " + str(int((elapsed//60)%60)) + " mins " + str(int(elapsed%60)) + " secs"
-			totalTime = str(int(elapsedTotal//3600)) + " hrs " + str(int((elapsedTotal//60)%60)) + " mins " + str(int(elapsedTotal%60)) + " secs"
-			
-			snakeDNA.printGenStats()
-			print("    Current memory usage:", str(psutil.virtual_memory()[2]) + str("%"))
-			print("    Generation took:", generationTime)
-			print("    Total time elapsed:", totalTime)
-			print("    Time of day:", currentTime)
-			bestSnake = snakeDNA.generation["best"]["object"]  # debug delete
-			
-			# RECORD IDX OF LEADING SNAKE HERE OR FROM GENETIC
-			
-			
-			trials = 10
+			# make following into its own function!!!!!!!!!!
+			trials = 100
 			scores = []
-			if algoChoice in {"Multi Controller", "Hierarchical Controller"}:
-				algos = bestSnake.behavior.algoUsage.keys()
+			if algoChoice in {"Multi", "Hierarchical"}:
+				algos = initialBest.behavior.algoUsage.keys()
 				avgUsage = {algo: 0 for algo in algos}
 			for _ in range(trials):
-				game.playTrainingGame(bestSnake, render=False)
-				scores.append(bestSnake.score)
-				if algoChoice in {"Multi Controller", "Hierarchical Controller"}:
+				games.playTrainingGame(initialBest, render=False)
+				scores.append(initialBest.score)
+				if algoChoice in {"Multi", "Hierarchical"}:
 					for algo in algos:
-						avgUsage[algo] += bestSnake.behavior.algoUsage[algo]
+						avgUsage[algo] += initialBest.behavior.algoUsage[algo]
 			avgScore = round(sum(scores)/trials, 3)
-			print("    Best snake scores, avg score (n=" + str(trials) + "):", str(scores) + ",", avgScore)
-			if algoChoice in {"Multi Controller", "Hierarchical Controller"}:
+			std = round(np.std(scores))
+			#print("    Best snake scores, avg score (n=" + str(trials) + "): " + str(avgScore) + ",", std)
+			if algoChoice in {"Multi", "Hierarchical"}:
 				avgUsage = {algo: round(avgUsage[algo]/trials, 3) for algo in algos}
-				print("    Best snake average algorithm use (n=" + str(trials) + "):", avgUsage)
+				#print("    Best snake average algorithm use (n=" + str(trials) + "):", avgUsage)
 			
+			genData = snakeDNA.getGenStats()
+			genData.update({"time": 0})
+			genData["sampleScore"] = avgScore
+			genData["sampleStd"] = std
 			
-			if settings.displayTraining:
-				game.playTrainingGame(bestSnake, render=False)  # best snake of gen plays game in GUI window
-
-			# save data of generation to .../dna/evolution_x/generation_y/analytics.json
-			generationPath = os.path.join(evolutionPath, "generation_" + str(gen))
-			data = snakeDNA.getGenStats()
-			data.update({"time": elapsed})
-			self._logGenerationData(data, generationPath)
-
-			# saves neural net of best snake from generation to .../dna/evolution_x/generation_y/model.npz
-			modelPath = os.path.join(generationPath, "model.npz")
-			model = bestSnake.getBrain()
-			model.update({"color": bestSnake.color})
+			if evolution.active():
+				evolution.update(genData)
 			
-			self._saveSnakeData(model, modelPath)
-			print()
-		snakeDNA.cleanup()
-		
-	def _makeInitialPopulation(self, algoChoice, algoIndex, trainedFiles, population):
-		algorithms = ["neural network", "multi", "hierarchical"]
-		
-		behaviorKwargs = {}
-		behaviorArgs = []
-		
-		snakeKwargs = {
-			"initialSize": settings.initialSnakeSize,
-			"maxVision": settings.maxSnakeVision,
-			"hungerFunc": settings.hungerFunc,
-		}
-
-		# MAKE CHOICE FOR USER TO GO BACK
-		if algoChoice == "Multi Controller":
-			# print CHOICE, A FINE SELECTION!
-			modelIndex, choice = self.getSelection(*trainedFiles, msg="\nSelect AI to use:")
-			modelFile = trainedFiles[modelIndex]
-			modelPath = os.path.join(self.modelPath, modelFile)
-			data = self._loadSnakeData(modelPath)
-
-			behaviorKwargs.update({
-				"weights": data["weights"],
-				"biases": data["biases"],
-				"architecture": data["architecture"],
-				"shielded": settings.smartShield
-			})
-			snakeKwargs["color"] = tuple([int(value) for value in data["color"]])
+			trainingTimer = time()
 			
-		elif algoChoice == "Hierarchical Controller":
-			networkData = []
-			selected = set()
-			for i in range(3):  # remove already selected items from list once chosen??
-				modelIndex, modelChoice = self.getSelection(*trainedFiles, msg="\nSelect AI not already chosen to use:", isValid = lambda idx: not (idx - 1) in selected)
-				selected.add(modelIndex)
-				modelFile = trainedFiles[modelIndex]
-				modelPath = os.path.join(self.modelPath, modelFile)
-				data = self._loadSnakeData(modelPath)
-				networkData.append({
-					"weights": data["weights"],
-					"biases": data["biases"],
-					"architecture": data["architecture"],
-				})
+			# initialize paths and files
+			if len(dnaFiles := os.listdir(self.paths["dna"])) > 0:
+				currEvolution = max([int(file[file.index("_")+1:]) for file in dnaFiles if file[:10] == "evolution_"]) + 1
+			else:
+				currEvolution = 1
+	 
+			evolutionPath = os.path.join(self.paths["dna"], "evolution_" + str(currEvolution))
+			os.mkdir(evolutionPath)
+			data = {
+				"evolution": currEvolution,
+				"settings": settings.getDictInfo(),
+				"fitness": initialPopulation[0].fitness.__doc__[9:-9],
+				"architecture": settings.networkArchitecture
+			}
+
+			# write settings for this training session
+			ui.saveToJSON(data, os.path.join(evolutionPath, "settings.json"))
 			
-			behaviorKwargs.update({
-				"networkData": networkData,
-				"shielded": settings.smartShield
-			})		
+			# train each generation
+			print("\nPOPULATION SIZE:", population, "\nGENERATIONS:", generations, "\n")
+			for gen in range(1, generations + 1):
+				timer = time()
+				snakeDNA.evolve()
+				
+				elapsed = round(time() - timer, 2)
+				elapsedTotal = round(time() - trainingTimer, 2)
+				
+				snakeDNA.printGenStats()
+				print("    Current memory usage:", str(psutil.virtual_memory()[2]) + str("%"))
+				print("    Generation took:", ui.formatTime(elapsed))
+				print("    Total time elapsed:", ui.formatTime(elapsedTotal))
+				print("    Time of day:", datetime.now().strftime("%H:%M:%S"))
+				
+				bestSnake = snakeDNA.generation["best"]["object"]  # debug delete
+				
+				# RECORD IDX OF LEADING SNAKE HERE OR FROM GENETIC
+				trials = 100
+				scores = []
+				if algoChoice in {"Multi", "Hierarchical"}:
+					algos = bestSnake.behavior.algoUsage.keys()
+					avgUsage = {algo: 0 for algo in algos}
+				for _ in range(trials):
+					games.playTrainingGame(bestSnake, render=False)
+					scores.append(bestSnake.score)
+					if algoChoice in {"Multi", "Hierarchical"}:
+						for algo in algos:
+							avgUsage[algo] += bestSnake.behavior.algoUsage[algo]
+				avgScore = round(sum(scores)/trials, 3)
+				std = round(np.std(scores))
+				print("    Best snake scores, avg score (n=" + str(trials) + "): " + str(avgScore) + ",", std)
+				if algoChoice in {"Multi", "Hierarchical"}:
+					avgUsage = {algo: round(avgUsage[algo]/trials, 3) for algo in algos}
+					print("    Best snake average algorithm use (n=" + str(trials) + "):", avgUsage)
+
+				# save data of generation to .../dna/evolution_x/generation_y/analytics.json
+				generationPath = os.path.join(evolutionPath, "generation_" + str(gen))
+				data = snakeDNA.getGenStats()
+				data.update({"time": elapsed})
+				
+				os.mkdir(generationPath)
+				ui.saveToJSON(data, os.path.join(generationPath, "analytics.json"))
+
+				# saves neural net of best snake from generation to .../dna/evolution_x/generation_y/model.npz
+				modelPath = os.path.join(generationPath, "model.npz")
+				model = bestSnake.getBrain()
+				model.update({"color": bestSnake.color})
+				
+				self._saveSnakeData(model, modelPath, algoChoice)
+				
+				data["sampleScore"] = avgScore
+				data["sampleStd"] = std
+				
+				if evolution.active():
+					evolution.update(data)
+				
+				if settings.displayTraining:
+					games.playTrainingGame(bestSnake, render=False)  # best snake of gen plays game in GUI window
+				print()
+			evolution.cleanup()
+			snakeDNA.cleanup()
 			
-		else:  # training is neural networks
-			behaviorKwargs.update({"architecture": settings.networkArchitecture})
-			
-		return [snakes.Snake(algorithms[algoIndex], behaviorArgs=behaviorArgs, behaviorKwargs=behaviorKwargs, id=np.base_repr(i+1, 36), **snakeKwargs) for i in range(population)]	
-		
-	def _saveSnakeData(self, model, path):
-		weights = np.array(model["weights"], dtype=object)
-		biases = np.array(model["biases"], dtype=object)  # do these need to be converted from 
-		architecture = np.array(model["architecture"], dtype=object)
-		np.savez(
-			path,
-			weights=weights,
-			biases=biases,
-			architecture=architecture,
-			color=np.array(model["color"])
-		)
-
-	def _logGenerationData(self, data, path):
-		os.mkdir(path)
-		f = open(os.path.join(path, "analytics.json"), "w")
-		json.dump(data, f, indent=4)
-		f.close()
-		
-	def _watchReplay(self) -> None:
-		"""Gets data from last game and replays it in GUI window"""
-		if self.currGameEnvironment is None:
-			print("\nNo game to re-watch!")
-		else:
-			data = self.currGameEnvironment.getData()
-			self._replay(data["moves"], data["origin"], data["food"], data["mapSize"], data["color"])
-
-	def _watchSaved(self) -> None:
-		"""Allows user to select saevd game from .../replays and replays it in GUI window"""
-		replayFiles = os.listdir(self.replayPath)
-		numReplays = len(replayFiles)
-		if len(replayFiles) == 0:
-			print("\nNo saved replays!")
-		else:
-			print()
-			msg = "Select game to replay:"
-			for i, gameSave in enumerate(replayFiles, start=1):
-				msg += "\n\t" + str(i) + ") " + str(gameSave)
-			backIndex = numReplays + 1
-			msg += "\n\t" + str(backIndex) + ") Back"
-			index = self.getValidInput(msg, dtype=int, valid=range(1, numReplays + 2)) - 1
-
-			if index != backIndex-1:
-				gameName = replayFiles[index]
-
-				with open(self.replayPath + "/" + gameName) as f:
-					gameData = json.load(f)
-
-				moves = [tuple(move) for move in gameData["moves"]]
-				origin = tuple(gameData["origin"])
-				food = [tuple(food) for food in gameData["food"]]
-				mapSize = tuple(gameData["mapSize"])
-				color = tuple(gameData["color"])
-				self._replay(moves, origin, food, mapSize, color)
-
 	def _replay(self, moves: list, origin: tuple, food: list, mapSize: tuple, color: tuple) -> None:
 		"""
 		Constructs snake and environment from data and replays it in GUI window.
@@ -458,66 +323,217 @@ class Driver:
 		}
 		
 		snake = snakes.Snake("ghost", behaviorArgs=[moves], **snakeKwargs, color=color)
-		self.currGameEnvironment = environments.Environment(snake, mapSize, origin=origin, food=food)
-		game.playGame(self.currGameEnvironment)
+		gameEnvironment = environment.Environment(snake, mapSize, origin=origin, food=food)
+		games.playGame(gameEnvironment)
 		print()
-		self._checkSave()
-
-	@staticmethod
-	def _exit() -> None:
-		"""Ensures GUI windows are properly closed."""
-		print("\nExiting!")
-		sys.exit()
+		ui.checkSave(gameEnvironment, self._saveGame)
 		
-	@staticmethod
-	def getValidInput(msg: str,
-					  dtype: any = str,
-					  lower: float = None, upper: float = None,
-					  valid: set = None,
-					  isValid: callable = None) -> any:
-		"""
-		Gets input from user constrained by parameters.
+	def _makeInitialPopulation(self, algoIndex, algoChoice, population):
+		modelsPath = self.paths["neural_net"]
+		trainedFiles = os.listdir(modelsPath)
+		
+		if len(trainedFiles) == 0 or (len(trainedFiles) < 3 and algoChoice == "Hierarchical"):
+			print("No enough trained AI!\n")
+			return
+				
+		algorithms = ["neural network", "multi", "hierarchical"]
+		
+		behaviorKwargs = {}
+		behaviorArgs = []
+		
+		snakeKwargs = {
+			"initialSize": settings.initialSnakeSize,
+			"maxVision": settings.maxSnakeVision,
+			"hungerFunc": settings.hungerFunc,
+		}
 
-		Parameters
-		----------
-		msg: str
-			Message to print out to user requesting input
-		dtype: any, default=str
-			Type that input will get converted to
-		lower: float, optional
-			Numerical lower bound
-		upper: float, optional
-			Numerical upper bound
-		valid: set, optional
-			Set of possible valid inputs
-		isValid: callable, optional
-			Function returning bool to determine if input is valid
-
-		Returns
-		-------
-		any: valid user input
-		"""
-		print(msg)
-		while True:
-			try:
-				choice = dtype(input("\nChoice: "))
-			except ValueError:  # if type can't be properly converted into dtype
-				continue
-			if (lower is None or choice >= lower) and \
-					(upper is None or choice <= upper) and \
-					(valid is None or choice in valid) and \
-					(isValid is None or isValid(choice)):
-				return choice
-	
-	@staticmethod		
-	def getSelection(*args, msg: str = "Choose item:", **kwargs) -> tuple:
-		for i, item in enumerate(args):
-			msg += "\n    " + str(i + 1) + ") " + str(item)
+		# MAKE CHOICE FOR USER TO GO BACK
+		if algoChoice == "Multi":
+			# print CHOICE, A FINE SELECTION!
+			modelIndex, choice = ui.getSelection(*trainedFiles, msg="\nSelect AI to use for neural network:")
+			modelFile = trainedFiles[modelIndex]
+			modelPath = os.path.join(modelsPath, modelFile)
+			data = self._loadSnakeData(modelPath, "Neural Network")
+			snakeKwargs.update(data["snakeKwargs"])
+			behaviorKwargs.update(data["behaviorKwargs"])
 			
-		i = Driver.getValidInput(msg, dtype=int, lower=1, upper=len(args), **kwargs) - 1
-		return i, args[i]
-	
-	@staticmethod	
-	def loadNPZ(path):
-		 return np.load(path, allow_pickle=True)
+		elif algoChoice == "Hierarchical":
+			networkData = []
+			selected = set()
+			for i in range(3):  # remove already selected items from list once chosen??
+				modelIndex, modelChoice = ui.getSelection(*trainedFiles, "Back", msg="\nSelect AI not already chosen to use:", isValid = lambda idx: not (idx - 1) in selected)
+				if modelChoice == "Back":
+					return
+				selected.add(modelIndex)
+				modelFile = trainedFiles[modelIndex]
+				modelPath = os.path.join(modelsPath, modelFile)
+				data = self._loadSnakeData(modelPath, "Neural Network")
+				rawBehaviorKwargs = data["behaviorKwargs"]
+				networkData.append({
+					"weights": rawBehaviorKwargs["weights"],
+					"biases": rawBehaviorKwargs["biases"],
+					"architecture": rawBehaviorKwargs["architecture"],
+				})
+			
+			behaviorKwargs.update({
+				"networkData": networkData,
+				"shielded": settings.smartShield
+			})		
+			
+		else:  # training is neural networks
+			behaviorKwargs.update({"architecture": settings.networkArchitecture})
+			
+		return [snakes.Snake(algorithms[algoIndex], behaviorArgs=behaviorArgs, behaviorKwargs=behaviorKwargs, id=np.base_repr(i+1, 36), **snakeKwargs) for i in range(population)]	
+
+	def _makeSnake(self, algoIndex, algoChoice):
+		algorithms = ["neural network", "multi", "hierarchical", "cycle", "pathfinder", "floodfill"]
+		behaviorKwargs = {}
+		behaviorArgs = []
 		
+		# make behavior args
+		snakeKwargs = {
+			"initialSize": settings.initialSnakeSize,
+			"maxVision": settings.maxSnakeVision,
+			"hungerFunc": settings.hungerFunc,
+		}
+		
+		if algoChoice in {"Neural Network", "Multi", "Hierarchical"}:
+			modelsPath = {
+				"Neural Network": self.paths["neural_net"],
+				"Multi": self.paths["multi"],
+				"Hierarchical": self.paths["hierarchical"]
+			}[algoChoice]
+			
+			trainedFiles = os.listdir(modelsPath)
+			
+			if len(trainedFiles) == 0:
+				print("No trained AI!\n")
+				return  # go back a page
+				
+			modelIndex, modelChoice = ui.getSelection(*trainedFiles, "Back", msg="Select AI to use:")
+			
+			if modelChoice == "Back":
+				return self._playAI()
+				
+			modelFile = trainedFiles[modelIndex]
+			modelPath = os.path.join(modelsPath, modelFile)
+			
+			data = self._loadSnakeData(modelPath, algoChoice)
+			snakeKwargs.update(data["snakeKwargs"])
+			behaviorArgs = data["behaviorArgs"]
+			behaviorKwargs.update(data["behaviorKwargs"])
+				
+		elif algoChoice == "Pathfinding":
+			behaviorKwargs = {"floodfill": True}
+		elif algoChoice == "Floodfill":
+			pass
+		elif algoChoice == "Cycle":
+			snakeKwargs["hungerFunc"] = lambda size: 1000  # so snkae does starve... shortcuts??
+
+		snake = snakes.Snake(algorithms[algoIndex], behaviorArgs=behaviorArgs, behaviorKwargs=behaviorKwargs, **snakeKwargs)
+		
+		return snake
+			
+	def _loadSnakeData(self, path, algoChoice):
+		data = np.load(path, allow_pickle=True)
+		if algoChoice == "Neural Network":
+			snakeKwargs = {"color": tuple([int(value) for value in data["color"]])}
+			behaviorArgs = []
+			behaviorKwargs = {
+				"weights": [np.asarray(layer, dtype=float) for layer in data["weights"]],
+				"biases": [np.asarray(layer, dtype=float) for layer in data["biases"]],
+				"architecture": data["architecture"],
+				"shielded": settings.smartShield
+			}
+		elif algoChoice == "Multi":
+			snakeKwargs = {"color": tuple([int(value) for value in data["color"]])}
+			behaviorArgs = []
+			behaviorKwargs = {
+				"weights": [np.asarray(layer, dtype=float) for layer in data["networkWeights"]],
+				"biases": [np.asarray(layer, dtype=float) for layer in data["networkBiases"]],
+				"architecture": data["networkArchitecture"],
+				"metaWeights": [np.asarray(layer, dtype=float) for layer in data["metaWeights"]],
+				"metaBiases": [np.asarray(layer, dtype=float) for layer in data["metaBiases"]],
+				"metaArchitecture": data["metaArchitecture"],
+				"shielded": settings.smartShield
+			}
+		elif algoChoice == "Hierarchical":
+			snakeKwargs = {"color": tuple([int(value) for value in data["color"]])}
+			behaviorArgs = []
+			
+			network1 = {"weights": data["networkWeights1"], "biases": data["networkBiases1"], "architecture": data["networkArchitecture1"]}
+			network2 = {"weights": data["networkWeights2"], "biases": data["networkBiases2"], "architecture": data["networkArchitecture2"]}
+			network3 = {"weights": data["networkWeights3"], "biases": data["networkBiases3"], "architecture": data["networkArchitecture3"]}
+			
+			networkData = [network1, network2, network3]
+			
+			behaviorKwargs = {
+				"networkData": networkData,
+				"metaWeights": [np.asarray(layer, dtype=float) for layer in data["metaWeights"]],
+				"metaBiases": [np.asarray(layer, dtype=float) for layer in data["metaBiases"]],
+				"metaArchitecture": data["metaArchitecture"],
+				"shielded": settings.smartShield
+			}
+		else:
+			raise NotImplementedError("Unknown algo choice: " + algoChoice)
+		
+		return {"behaviorKwargs": behaviorKwargs, "behaviorArgs": behaviorArgs, "snakeKwargs": snakeKwargs} 
+		
+	def _saveSnakeData(self, model, path, algoChoice):
+		if algoChoice == "Neural Network":
+			weights = np.array(model["weights"], dtype=object)
+			biases = np.array(model["biases"], dtype=object)
+			architecture = np.array(model["architecture"], dtype=object)
+			np.savez(
+				path,
+				weights = weights,
+				biases = biases,
+				architecture = architecture,
+				color = np.array(model["color"])
+			)
+		elif algoChoice == "Multi":
+			metaWeights = np.array(model["weights"], dtype=object)
+			metaBiases = np.array(model["biases"], dtype=object)
+			metaArchitecture = np.array(model["metaArchitecture"], dtype=object)
+			networkWeights = np.array(model["networkWeights"], dtype=object)
+			networkBiases = np.array(model["networkBiases"], dtype=object)
+			networkArchitecture = np.array(model["networkArchitecture"], dtype=object)
+			np.savez(
+				path,
+				metaWeights = metaWeights,
+				metaBiases = metaBiases,
+				metaArchitecture = metaArchitecture,
+				networkWeights = networkWeights,
+				networkBiases = networkBiases,
+				networkArchitecture = networkArchitecture,
+				color = np.array(model["color"])
+			)
+		elif algoChoice == "Hierarchical":
+			metaWeights = np.array(model["weights"], dtype=object)
+			metaBiases = np.array(model["biases"], dtype=object)
+			metaArchitecture = np.array(model["metaArchitecture"], dtype=object)
+			networkWeights = [np.array(network["weights"], dtype=object) for network in model["networks"]]
+			networkBiases = [np.array(network["biases"], dtype=object) for network in model["networks"]]
+			networkArchitectures = [np.array(network["architecture"], dtype=object) for network in model["networks"]]
+			np.savez(
+				path,
+				metaWeights = metaWeights,
+				metaBiases = metaBiases,
+				metaArchitecture = metaArchitecture,
+				networkWeights1 = networkWeights[0],
+				networkWeights2 = networkWeights[1],
+				networkWeights3 = networkWeights[2],
+				networkBiases1 = networkBiases[0],
+				networkBiases2 = networkBiases[1],
+				networkBiases3 = networkBiases[2],
+				networkArchitecture1 = networkArchitectures[0],
+				networkArchitecture2 = networkArchitectures[1],
+				networkArchitecture3 = networkArchitectures[2],
+				color = np.array(model["color"])
+			)
+		else:
+			raise NotImplementedError("Unknown snake type: " + algoChoice)
+
+	def _saveGame(self, environment, name):
+		ui.saveToJSON(environment.getData(), os.path.join(self.paths["replays"], name))
+			
