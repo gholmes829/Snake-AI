@@ -96,7 +96,6 @@ class Driver:
 		
 	def _playAI(self) -> None:
 		"""User selects saved model from .../dna/trained. Opens GUI window and AI plays game."""
-		# ask user how many games?
 		# check npz format with same size networks or something like that? Cant save certain things...??
 		
 		algoIndex, algoChoice = ui.getSelection("Neural Network", "Multi", "Hierarchical", "Cycle", "Pathfinding", "Floodfill", "Back", msg="\nSelect AI algorithm:")
