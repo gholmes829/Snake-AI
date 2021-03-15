@@ -184,6 +184,7 @@ class Driver:
 		if algoChoice != "Back" and (initialPopulation := self._makeInitialPopulation(algoIndex, algoChoice, population)) is not None:
 			colorCross = None
 			#colorCross = snakes.Snake.mergeTraits  # include color crossing
+			print("Evaluating initial...")
 			snakeDNA = training.Genetics(initialPopulation, games.playTrainingGame, mergeTraits=colorCross)
 			evolution = plotting.EvolutionGraph()
 			evolution.display()
@@ -191,6 +192,7 @@ class Driver:
 			initialBest = snakeDNA.generation["best"]["object"]
 			
 			# make following into its own function!!!!!!!!!!
+			print("Running initial trials...")
 			trials = 100
 			scores = []
 			if algoChoice in {"Multi", "Hierarchical"}:

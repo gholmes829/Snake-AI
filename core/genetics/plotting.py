@@ -62,7 +62,8 @@ class EvolutionGraph:
 			ax1.plot(std, c="green", ls="--", label="Best Sample Std")
 			ax1.plot(bestScore, c="red", label="Best Sample Score")
 			ax1.legend(loc="upper left")
-			ax1.set_ylabel("Score")
+			ax1.set_ylabel("Points")
+			ax1.set_title("Scores")
 			ax1.grid(alpha=0.25, ls="--")
 			
 			ax2.clear()
@@ -72,6 +73,7 @@ class EvolutionGraph:
 			ax2.plot(avg10Fitness, c="green", label="Top 10 Avg Fitness")
 			ax2.legend(loc="upper left")
 			ax2.set_ylabel("Fitness")
+			ax2.set_title("Fitnesses")
 			ax2.grid(alpha=0.25, ls="--")
 			
 			ax3.clear()
@@ -80,6 +82,7 @@ class EvolutionGraph:
 			ax3.plot(duration, c="magenta", label="Gen Duration")
 			ax3.legend(loc="upper left")
 			ax3.set_ylabel("Seconds")
+			ax3.set_title("Time")
 			ax3.grid(alpha=0.25, ls="--")
 			
 			ax3.set_xlabel("Generations")

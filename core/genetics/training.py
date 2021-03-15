@@ -91,7 +91,7 @@ class Genetics:
 				 mergeTraits: callable = None,
 				 crossoverRate: float = 0.3,
 				 mutationRate: float = 0.7,
-				 trials: int = 5
+				 trials: int = 4
 				 ) -> None:
 		"""
 		Initializes.
@@ -200,7 +200,7 @@ class Genetics:
 		bestFitnessSnakeId = self.generation["population"][bestFitnessIndex]["object"].id
 		
 		print("RESULTS FOR GEN:", self.gen)
-		print("    Highest average core, id:", str(round(maxAvgScore, 2)) + ",", maxAvgScoreSnakeId)
+		print("    Highest average score, id:", str(round(maxAvgScore, 2)) + ",", maxAvgScoreSnakeId)
 		print("    Average score:", round(avgScore, 2))
 		print("    Average fitness:", round(avgFitness, 2))
 		print("    Best fitness, id:", str(round(bestFitness, 2)) + ",", bestFitnessSnakeId)

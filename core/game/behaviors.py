@@ -337,11 +337,12 @@ class Hierarchical:
 	def __init__(
 			self,
 			networkData = None,
-			metaArchitecture = (27, 18, 3),
+			metaArchitecture = (24, 16, 3),
 			metaWeights = None,
 			metaBiases = None,
 			shielded = False,
 			):
+		# reset architecture, removed additional features for testing
 		self.nextDirection, self.nextMove = None, None
 		self.metaNetwork = brain.FFNN(metaArchitecture, weights=metaWeights, biases=metaBiases)
 		self.shielded = shielded
@@ -444,7 +445,8 @@ class Hierarchical:
 		])
 		"""
 		
-		features = np.concatenate((np.array([relativeSnakeSize, relativeHunger, manhattanMovesToFood]), vision))
+		# features = np.concatenate((np.array([relativeSnakeSize, relativeHunger, manhattanMovesToFood]), vision))
+		features = vision  # delete, trying using only og features
 		
 		"""
 		# ------------------------------------------------------------------------------------------------------------------------------------
