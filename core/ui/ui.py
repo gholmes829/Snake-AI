@@ -45,7 +45,7 @@ def getValidInput(
 				(valid is None or choice in valid) and \
 				(isValid is None or isValid(choice)):
 			if end is not None:
-				print(end)
+				print("", end=end)
 			return choice
 	
 def getSelection(*args, msg: str = "Choose item:", end=None, **kwargs) -> tuple:

@@ -99,10 +99,11 @@ class Driver:
 		# ask user how many games?
 		# check npz format with same size networks or something like that? Cant save certain things...??
 		
-		algoIndex, algoChoice = ui.getSelection("Neural Network", "Multi", "Hierarchical", "Cycle", "Pathfinding", "Floodfill", "Back", msg="\nSelect AI algorithm:", end="\n\n")
+		algoIndex, algoChoice = ui.getSelection("Neural Network", "Multi", "Hierarchical", "Cycle", "Pathfinding", "Floodfill", "Back", msg="\nSelect AI algorithm:")
 		
 		if algoChoice != "Back" and (snake := self._makeSnake(algoIndex, algoChoice)) is not None:
-			numGames = ui.getValidInput("How many games should be played?", dtype=int, lower=1, end="\n")
+			print()
+			numGames = ui.getValidInput("\nHow many games should be played?", dtype=int, lower=1, end="\n")
 			
 			scores = []			
 			timer = time()
