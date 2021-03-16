@@ -168,7 +168,7 @@ class Multi:  # genetic, pathfinding, floodfill
 			architecture=(24, 16, 3),
 			weights = None,
 			biases = None,
-			metaArchitecture=(21, 14, 3),
+			metaArchitecture=(24, 16, 3),
 			metaWeights = None,
 			metaBiases = None,
 			shielded = False,
@@ -213,12 +213,12 @@ class Multi:  # genetic, pathfinding, floodfill
 		#if (self.algoIndex in {0, 2} and foodFound) or (self.algoIndex == 1 and not self.path) or self.algoIndex is None:
 		if self.algoIndex in {0, 2} or (self.algoIndex == 1 and not self.path) or self.algoIndex is None:
 			# calculate input features
-			relativeSnakeSize = len(body) / environment.area
+			#relativeSnakeSize = len(body) / environment.area
 			
-			foodCloseness = 1 / brain.distOpt(body[0], food)
-			tailCloseness = 1 / brain.distOpt(body[0], body[-1])
+			#foodCloseness = 1 / brain.distOpt(body[0], food)
+			#tailCloseness = 1 / brain.distOpt(body[0], body[-1])
 			
-			centerCloseness = 1 / (brain.distOpt(body[0], (int(environment.size[0]/2), int(environment.size[1]/2))) + 1)
+			#centerCloseness = 1 / (brain.distOpt(body[0], (int(environment.size[0]/2), int(environment.size[1]/2))) + 1)
 				
 			# danger as openness (need flood fill to search for openness, expensive)
 			#leftSpace = self.openness[-1, 0] / environment.area
@@ -232,7 +232,7 @@ class Multi:  # genetic, pathfinding, floodfill
 			rightDanger = int(environment[head[0] + right[0], head[1] + right[1]] == -1)
 			
 			self.numOpenAdjacent = 3 - leftDanger - forwardDanger - rightDanger
-			
+			"""
 			leftDangerFood = int(environment[food[0] - 1, food[1]] == -1)
 			upDangerFood = int(environment[food[0], food[1] - 1] == -1)
 			rightDangerFood = int(environment[food[0] + 1, food[1]] == -1)
@@ -278,6 +278,8 @@ class Multi:  # genetic, pathfinding, floodfill
 				relativeHunger,
 				manhattanMovesToFood
 			])
+			"""
+			features = vision  # delete, trying using only og features
 			
 			self.algoIndex = np.argmax(self.metaNetwork.feedForward(features))
 			self.algoName = self.algoIndexToName[self.algoIndex]
@@ -376,7 +378,7 @@ class Hierarchical:
 		tail = body[-1]
 		
 		# calculate input features
-		relativeSnakeSize = len(body) / environment.area
+		#relativeSnakeSize = len(body) / environment.area
 		
 		# REMOVE UNNECESARY FEATURES
 		#foodCloseness = 1 / brain.distOpt(body[0], food)
@@ -414,8 +416,8 @@ class Hierarchical:
 		#wallLeft = 1 / (head[0] + 1)
 		
 		# food relations
-		relativeHunger = self.prevSnakeHunger/awareness["maxHunger"]
-		manhattanMovesToFood = (abs(food[0] - head[0]) + abs(food[1] - head[1])) / environment.innerPerimeter
+		#relativeHunger = self.prevSnakeHunger/awareness["maxHunger"]
+		#manhattanMovesToFood = (abs(food[0] - head[0]) + abs(food[1] - head[1])) / environment.innerPerimeter
 		
 		vision, visionBounds = brain.castRays(head, direction, environment, awareness["maxVision"])
 		
