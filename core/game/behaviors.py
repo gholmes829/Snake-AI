@@ -596,10 +596,11 @@ class Replay:
 		-------
 		tuple: (new global direction, move necessary to have Snake oriented to this direction)
 		"""
-
+        
 		return self.nextDirection, self.nextMove
 		
-	def calcMoves(self, body, direction, awareness, environment, hunger):
+	def calcMoves(self, body, direction, awareness, environment, hunger):  
+		# index error next line when user closes GUI window before game is done!
 		self.nextDirection = self.memories[self.t]
 		self.nextMove = brain.getOrientedDirection(direction, self.nextDirection, "global")
 		self.t += 1
