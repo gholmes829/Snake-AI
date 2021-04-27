@@ -43,7 +43,7 @@ maxSnakeVision = max(mapSize)  # how far rays are cast
 
 def hungerFunc(size):
 	# return area  # delete
-	return min(a * (size**order) + b, mapSize[0] * mapSize[1]) + 50
+	return min(a * (size**order) + b, mapSize[0] * mapSize[1])
 
 
 	
