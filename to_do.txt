@@ -1,13 +1,15 @@
+Note: almost all use cases work exactly as intended. Most bugs occur when closing windows in certain ways. Features to add are just new ideas and are not necessary. Items in other category should be done soon.
+
 KNOWN BUGS
 - doc strings on settings.txt for each evolution parsed incorrectly
-- meta controller limited to depth=2 and #(TN)=3
 - keyboard excpetion when training with multiproccessing can lead to looping exceptions
 - keyboard exception when training may not join pools properly
 - plotting chart unoptimized
-- can crash when playing last game
 
 FEATURES TO ADD
 - testing
+- command line args for script interface
+- make hierarchical controller scalable
 - add bash scripts to make ops more convenient (training, playing, resetting)
 - add settings to visualize multiple snakes training at once
 - potentially limit CPU core usage
@@ -15,6 +17,7 @@ FEATURES TO ADD
 - add battle mode
 - generate evolution graph post training
 - diversification algorithm for initial training population
+- easier ability to train meta and hierarchical
 
 CHANGES
 - change NN output to softmax, make activation functions modular
