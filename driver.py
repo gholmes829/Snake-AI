@@ -123,7 +123,6 @@ class Driver:
 			if not numGames - 1:
 				print()
 				ui.checkSave(gameEnvironment, self._saveGame)
-				self.prevGameEnvironment = gameEnvironment
 			else:
 				print("\nTime elapsed across", str(numGames) + " games:", round(elapsed, 5), "secs")
 				print("Average time per game", round(elapsed/numGames, 5), "secs")
@@ -133,14 +132,15 @@ class Driver:
 					avgUsage = {algo: round(avgUsage[algo]/numGames, 3) for algo in algos}
 					print("Snake average algorithm use (n=" + str(numGames) + "):", avgUsage)
 				print()
+			self.prevGameEnvironment = gameEnvironment
 
 	def _watchReplay(self) -> None:
 		"""Gets data from last game and replays it in GUI window"""
 		if self.prevGameEnvironment is None:
-			print("\nNo game to re-watch!")
+			print("No game to re-watch!\n")
 		else:
 			data = self.prevGameEnvironment.getData()
-			self._replay(data["moves"][::-1], data["origin"], data["food"], data["mapSize"], data["color"])
+			self._replay(data["moves"], data["origin"], data["food"], data["mapSize"], data["color"])
 
 	def _watchSaved(self) -> None:
 		"""Allows user to select saevd game from .../replays and replays it in GUI window"""
@@ -169,7 +169,6 @@ class Driver:
 				mapSize = tuple(gameData["mapSize"])
 				color = tuple(gameData["color"])
 				self._replay(moves, origin, food, mapSize, color)
-
 
 	def _trainAI(self) -> None:
 		"""Trains AI snakes. Saves data and models in ../dna folder. Creates new folder for each training session."""

@@ -132,7 +132,7 @@ class Environment:
 		dict: necessary information about environment
 		"""
 		return {
-			"moves": self.moveLog,
+			"moves": self.moveLog[::-1],
 			"origin": self.origin,
 			"food": self.foodLog[::-1],
 			"mapSize": self.gameMap.size,
