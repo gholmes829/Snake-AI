@@ -49,15 +49,15 @@ class NeuralNetwork:
 		self.shielded = shielded
 		self.nextDirection, self.nextMove = None, None
 		self.getNetworkDecision = self.getNetworkDecisionFunc(self.shielded)
-		self.ds = ((-1, 0), (0, -1), (1, 0))
-		self.numOpenAdjacent = 0
+		#self.ds = ((-1, 0), (0, -1), (1, 0))
+		#self.numOpenAdjacent = 0
 
 	def calcMoves(self, body, direction, awareness, environment, hunger):
 		vision, visionBounds = brain.castRays(body[0], direction, environment, awareness["maxVision"])
 		self.nextDirection, self.nextMove = self.getNetworkDecision(self.network, body, direction, vision)
 		head = body[0]
-		adjacentDanger = sum([int(environment[head[0] + dx, head[1] + dy] == -1) for dx, dy in self.ds])
-		self.numOpenAdjacent = 3 - adjacentDanger  # maybe change fitness heuristic to based on num danger instead of num open?
+		#adjacentDanger = sum([int(environment[head[0] + dx, head[1] + dy] == -1) for dx, dy in self.ds])
+		#self.numOpenAdjacent = 3 - adjacentDanger  # maybe change fitness heuristic to based on num danger instead of num open?
 		return {"visionBounds": visionBounds}
 		
 	def __call__(self) -> tuple:
@@ -189,10 +189,10 @@ class Multi:  # genetic, pathfinding, floodfill
 		self.algoIndexToName = {0: "genetic", 1: "pathfind", 2: "floodfill"}
 		
 		#self.prevSnakeSize = 0
-		self.singleCounter = 0
-		self.prevSnakeHunger = 0
+		#self.singleCounter = 0
+		#self.prevSnakeHunger = 0
 		#self.maxSingleCounter = 5
-		self.numOpenAdjacent = 0
+		#self.numOpenAdjacent = 0
 		
 		self.ds = ((-1, 0), (0, -1), (1, 0))
 
@@ -213,17 +213,20 @@ class Multi:  # genetic, pathfinding, floodfill
 		#if (self.algoIndex in {0, 2} and foodFound) or (self.algoIndex == 1 and not self.path) or self.algoIndex is None:
 		if self.algoIndex in {0, 2} or (self.algoIndex == 1 and not self.path) or self.algoIndex is None:
 			# calculate input features
+			""" Not using these right now
+			# calculate input features
 			#relativeSnakeSize = len(body) / environment.area
 			
-			#foodCloseness = 1 / brain.distOpt(body[0], food)
-			#tailCloseness = 1 / brain.distOpt(body[0], body[-1])
+			# REMOVE UNNECESARY FEATURES
+			foodCloseness = 1 / brain.distOpt(body[0], food)
+			tailCloseness = 1 / brain.distOpt(body[0], body[-1])
 			
-			#centerCloseness = 1 / (brain.distOpt(body[0], (int(environment.size[0]/2), int(environment.size[1]/2))) + 1)
+			centerCloseness = 1 / (brain.distOpt(body[0], (int(environment.size[0]/2), int(environment.size[1]/2))) + 1)
 				
 			# danger as openness (need flood fill to search for openness, expensive)
-			#leftSpace = self.openness[-1, 0] / environment.area
-			#forwardSpace = self.openness[0, 1] / environment.area
-			#rightSpace = self.openness[1, 0] / environment.area
+			leftSpace = self.openness[-1, 0] / environment.area
+			forwardSpace = self.openness[0, 1] / environment.area
+			rightSpace = self.openness[1, 0] / environment.area
 			
 			#proximity
 			left, right = brain.rotate(direction, 90), brain.rotate(direction, -90)
@@ -232,7 +235,7 @@ class Multi:  # genetic, pathfinding, floodfill
 			rightDanger = int(environment[head[0] + right[0], head[1] + right[1]] == -1)
 			
 			self.numOpenAdjacent = 3 - leftDanger - forwardDanger - rightDanger
-			"""
+			
 			leftDangerFood = int(environment[food[0] - 1, food[1]] == -1)
 			upDangerFood = int(environment[food[0], food[1] - 1] == -1)
 			rightDangerFood = int(environment[food[0] + 1, food[1]] == -1)
@@ -249,11 +252,9 @@ class Multi:  # genetic, pathfinding, floodfill
 			wallDown = 1 / (environment.size[1] - head[1] + 1)
 			wallLeft = 1 / (head[0] + 1)
 			
-			# maybe change hunger to curr instead of previous unless change behavior on food aquisition
-			
 			# food relations
 			relativeHunger = self.prevSnakeHunger/awareness["maxHunger"]
-			manhattanMovesToFood = (abs(food[0] - head[0]) + abs(food[1] - head[1])) / (sum(environment.size))
+			manhattanMovesToFood = (abs(food[0] - head[0]) + abs(food[1] - head[1])) / environment.innerPerimeter
 			
 			features = np.array([
 				relativeSnakeSize,
@@ -278,21 +279,22 @@ class Multi:  # genetic, pathfinding, floodfill
 				relativeHunger,
 				manhattanMovesToFood
 			])
-			"""
-			features = vision  # delete, trying using only og features
 			
+			features = np.concatenate((np.array([relativeSnakeSize, relativeHunger, manhattanMovesToFood]), vision))
+			"""
+		
+		
+			vision, visionBounds = brain.castRays(head, direction, environment, awareness["maxVision"])
+			features = vision  # delete, trying using only og features
 			self.algoIndex = np.argmax(self.metaNetwork.feedForward(features))
 			self.algoName = self.algoIndexToName[self.algoIndex]
-			# print(algoName)
 			
-			#self.singleCounter = self.maxSingleCounter
-			
-		if self.algoIndex == 0:
-			vision, visionBounds = brain.castRays(head, direction, environment, awareness["maxVision"])
+		if self.algoIndex == 0:  # neural net
+			# vision, visionBounds = brain.castRays(head, direction, environment, awareness["maxVision"])
 			self.nextDirection, self.nextMove = self.getNetworkDecision(self.network, body, direction, vision)
-		elif self.algoIndex == 1:
+		elif self.algoIndex == 1:  # pathfinding
 			if not self.path:
-				self.path = decisions.getPath(environment, body, self.pathLength)
+				self.path = decisions.getPath(environment, body, self.pathLength, depth=100)
 			if self.path:
 				self.nextDirection, self.nextMove = decisions.getMoveFromPath(self.path, body, direction)
 			elif self.floodfill:
@@ -300,16 +302,14 @@ class Multi:  # genetic, pathfinding, floodfill
 				self.nextDirection, self.nextMove = decisions.getSafestMove(self.openness, direction)
 			else:
 				self.nextDirection, self.nextMove = direction, (0, 1)
-		elif self.algoIndex == 2:
-			self.openness = decisions.getOpenness(body, direction, environment, depth=-1)
+		elif self.algoIndex == 2:  # flood fill
+			self.openness = decisions.getOpenness(body, direction, environment, depth=75)  # can modify depth
 			self.distances = decisions.getDistances(head, direction, food)
 			self.nextDirection, self.nextMove = decisions.getCloseSafeMove(self.openness, self.distances, direction)
 		else:  # space to define more
 			raise NotImplementedError
 		
 		self.algoUsage[self.algoName] += 1
-		self.prevSnakeHunger = hunger
-		#self.singleCounter -= 1
 		
 	def __call__(self):
 		return self.nextDirection, self.nextMove
@@ -319,9 +319,6 @@ class Multi:  # genetic, pathfinding, floodfill
 		self.path.clear()
 		self.algoIndex = None
 		self.algoName = None
-		self.prevSnakeHunger = 0
-		self.numOpenAdjacent = 0
-		#self.singleCounter = 0
 		
 	def getBrain(self):
 		return {
@@ -348,7 +345,6 @@ class Hierarchical:
 		self.nextDirection, self.nextMove = None, None
 		self.metaNetwork = brain.FFNN(metaArchitecture, weights=metaWeights, biases=metaBiases)
 		self.shielded = shielded
-		
 		self.getNetworkDecision = NeuralNetwork.getNetworkDecisionFunc(self.shielded)
 		self.networks = []
 		
@@ -365,10 +361,6 @@ class Hierarchical:
 		self.algoIndex = None
 		self.algoName = None
 		
-		self.prevSnakeHunger = 0
-		
-		self.numOpenAdjacent = 0
-		
 		self.algoUsage = {"network 1": 0, "network 2": 0, "network 3": 0}
 		self.algoIndexToName = {0: "network 1", 1: "network 2", 2: "network 3"}
 		
@@ -377,19 +369,20 @@ class Hierarchical:
 		head = body[0]
 		tail = body[-1]
 		
+		""" Not using these right now
 		# calculate input features
 		#relativeSnakeSize = len(body) / environment.area
 		
 		# REMOVE UNNECESARY FEATURES
-		#foodCloseness = 1 / brain.distOpt(body[0], food)
-		#tailCloseness = 1 / brain.distOpt(body[0], body[-1])
+		foodCloseness = 1 / brain.distOpt(body[0], food)
+		tailCloseness = 1 / brain.distOpt(body[0], body[-1])
 		
-		#centerCloseness = 1 / (brain.distOpt(body[0], (int(environment.size[0]/2), int(environment.size[1]/2))) + 1)
+		centerCloseness = 1 / (brain.distOpt(body[0], (int(environment.size[0]/2), int(environment.size[1]/2))) + 1)
 			
 		# danger as openness (need flood fill to search for openness, expensive)
-		#leftSpace = self.openness[-1, 0] / environment.area
-		#forwardSpace = self.openness[0, 1] / environment.area
-		#rightSpace = self.openness[1, 0] / environment.area
+		leftSpace = self.openness[-1, 0] / environment.area
+		forwardSpace = self.openness[0, 1] / environment.area
+		rightSpace = self.openness[1, 0] / environment.area
 		
 		#proximity
 		left, right = brain.rotate(direction, 90), brain.rotate(direction, -90)
@@ -399,29 +392,26 @@ class Hierarchical:
 		
 		self.numOpenAdjacent = 3 - leftDanger - forwardDanger - rightDanger
 		
-		#leftDangerFood = int(environment[food[0] - 1, food[1]] == -1)
-		#upDangerFood = int(environment[food[0], food[1] - 1] == -1)
-		#rightDangerFood = int(environment[food[0] + 1, food[1]] == -1)
-		#downDangerFood = int(environment[food[0], food[1] + 1] == -1)
+		leftDangerFood = int(environment[food[0] - 1, food[1]] == -1)
+		upDangerFood = int(environment[food[0], food[1] - 1] == -1)
+		rightDangerFood = int(environment[food[0] + 1, food[1]] == -1)
+		downDangerFood = int(environment[food[0], food[1] + 1] == -1)
 		
-		#leftDangerTail = int(environment[tail[0] - 1, tail[1]] == -1)
-		#upDangerTail = int(environment[tail[0], tail[1] - 1] == -1)
-		#rightDangerTail = int(environment[tail[0] + 1, tail[1]] == -1)
-		#downDangerTail = int(environment[tail[0], tail[1] + 1] == -1)
+		leftDangerTail = int(environment[tail[0] - 1, tail[1]] == -1)
+		upDangerTail = int(environment[tail[0], tail[1] - 1] == -1)
+		rightDangerTail = int(environment[tail[0] + 1, tail[1]] == -1)
+		downDangerTail = int(environment[tail[0], tail[1] + 1] == -1)
 		
 		# wall dist
-		#wallUp = 1 / (body[0][1] + 1)
-		#wallRight = 1 / (environment.size[0] - head[0] + 1)
-		#wallDown = 1 / (environment.size[1] - head[1] + 1)
-		#wallLeft = 1 / (head[0] + 1)
+		wallUp = 1 / (body[0][1] + 1)
+		wallRight = 1 / (environment.size[0] - head[0] + 1)
+		wallDown = 1 / (environment.size[1] - head[1] + 1)
+		wallLeft = 1 / (head[0] + 1)
 		
 		# food relations
-		#relativeHunger = self.prevSnakeHunger/awareness["maxHunger"]
-		#manhattanMovesToFood = (abs(food[0] - head[0]) + abs(food[1] - head[1])) / environment.innerPerimeter
+		relativeHunger = self.prevSnakeHunger/awareness["maxHunger"]
+		manhattanMovesToFood = (abs(food[0] - head[0]) + abs(food[1] - head[1])) / environment.innerPerimeter
 		
-		vision, visionBounds = brain.castRays(head, direction, environment, awareness["maxVision"])
-		
-		"""
 		features = np.array([
 			relativeSnakeSize,
 			foodCloseness,
@@ -445,55 +435,20 @@ class Hierarchical:
 			relativeHunger,
 			manhattanMovesToFood
 		])
+		
+		features = np.concatenate((np.array([relativeSnakeSize, relativeHunger, manhattanMovesToFood]), vision))
 		"""
 		
-		# features = np.concatenate((np.array([relativeSnakeSize, relativeHunger, manhattanMovesToFood]), vision))
+		
+		vision, visionBounds = brain.castRays(head, direction, environment, awareness["maxVision"])
 		features = vision  # delete, trying using only og features
-		
-		"""
-		# ------------------------------------------------------------------------------------------------------------------------------------
-		# ENSEMBLE-LIKE BAYESIAN ANALYSIS
-		
-		m = 25  # number of ensembles
-		n = features.shape[0]  # number of input features
-		
-		# noise parameters based on normal distribution but could change model to multi modal or other distribution
-		mu = 0  # normal mean
-		sigma = 0.075  # normal std
-		
-		ensembles = np.zeros((m+1, n))
-		
-		ensembles[0] = features  # normal input
-		for i in range(m):  # generate ensembles with noise
-			ensembles[i+1] = features + np.random.normal(mu, sigma, n)  # mean, std, shape
-		
-		output = self.metaNetwork.feedForward(ensembles)  # m x 3
-		# would it be useful to take softmax of output to get probabilistic view?
-		
-		mu_hat = output.mean(axis=0)
-		cov = np.cov(output, rowvar=False)  # get covariance matrix 3 x 3
-		certainty = brain.FFNN.softmax((1 - cov.diagonal()))  # would this measure how much each decision varied with respect to pertubations in input?
-		final = mu_hat * certainty
-		#equal = np.argmax(final) == np.argmax(out)
-		#if not equal:
-			#print(normal)
-			#print(final)
-			#print()
-		normal = brain.FFNN.softmax(out)
-		self.algoIndex = np.argmax(final)
-		# ------------------------------------------------------------------------------------------------------------------------------------
-		"""
 		
 		
 		self.algoIndex = np.argmax(self.metaNetwork.feedForward(features))
 		self.algoName = self.algoIndexToName[self.algoIndex]
-		#print(algoName)
 		self.algoUsage[self.algoName] += 1
 		
-		#vision, visionBounds = brain.castRays(head, direction, environment, awareness["maxVision"])
 		self.nextDirection, self.nextMove = self.getNetworkDecision(self.networks[self.algoIndex], body, direction, vision)
-		
-		self.prevSnakeHunger = hunger
 		
 	def __call__(self):
 		return self.nextDirection, self.nextMove
@@ -502,8 +457,6 @@ class Hierarchical:
 		self.algoUsage = {"network 1": 0, "network 2": 0, "network 3": 0}
 		self.algoIndex = None
 		self.algoName = None
-		self.prevSnakeHunger = 0
-		self.numOpenAdjacent = 0
 		
 	def getBrain(self):
 		return {

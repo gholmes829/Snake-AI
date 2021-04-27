@@ -46,6 +46,8 @@ def getValidInput(
 				(isValid is None or isValid(choice)):
 			if end is not None:
 				print("", end=end)
+			else:
+				print()
 			return choice
 	
 def getSelection(*args, msg: str = "Choose item:", end=None, **kwargs) -> tuple:
@@ -76,9 +78,10 @@ def runModes(modes):
 	mode = None
 	modes, callbacks = list(zip(*modes))
 	while mode != "Exit":
-		index, mode = getSelection(*modes, msg="Select mode:")
+		index, mode = getSelection(*modes, msg="Select mode:", end="")
+		if mode != "Exit":
+			print()		
 		callbacks[index]()
-		print()
 
 def checkSave(data, callback, msg="Save?"):
 	"""Checks to see if user wants to save."""

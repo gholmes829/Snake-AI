@@ -86,7 +86,7 @@ class Driver:
 		"""Opens GUI window and lets user play Snake with keyboard controls."""
 		snake = snakes.Snake.Player()
 		gameEnvironment = environment.Environment(snake, settings.mapSize)
-		print("\nGet ready...")
+		print("Get ready...")
 		games.playPlayerGame(gameEnvironment)
 		finalScore = snake.score
 		print("Final score: " + str(finalScore))
@@ -98,11 +98,10 @@ class Driver:
 		"""User selects saved model from .../dna/trained. Opens GUI window and AI plays game."""
 		# check npz format with same size networks or something like that? Cant save certain things...??
 		
-		algoIndex, algoChoice = ui.getSelection("Neural Network", "Multi", "Hierarchical", "Cycle", "Pathfinding", "Floodfill", "Back", msg="\nSelect AI algorithm:")
+		algoIndex, algoChoice = ui.getSelection("Neural Network", "Multi", "Hierarchical", "Cycle", "Pathfinding", "Floodfill", "Back", msg="Select AI algorithm:")
 		
 		if algoChoice != "Back" and (snake := self._makeSnake(algoIndex, algoChoice)) is not None:
-			print()
-			numGames = ui.getValidInput("\nHow many games should be played?", dtype=int, lower=1, end="\n")
+			numGames = ui.getValidInput("How many games should be played? (select one game to render)", dtype=int, lower=1, end="\n")
 			
 			scores = []			
 			timer = time()
@@ -132,6 +131,7 @@ class Driver:
 				if algoChoice in {"Multi", "Hierarchical"}:
 					avgUsage = {algo: round(avgUsage[algo]/numGames, 3) for algo in algos}
 					print("Snake average algorithm use (n=" + str(numGames) + "):", avgUsage)
+				print()
 
 	def _watchReplay(self) -> None:
 		"""Gets data from last game and replays it in GUI window"""
@@ -148,7 +148,6 @@ class Driver:
 		if len(replayFiles) == 0:
 			print("\nNo saved replays!")
 		else:
-			print()
 			msg = "Select game to replay:"
 			for i, gameSave in enumerate(replayFiles, start=1):
 				msg += "\n\t" + str(i) + ") " + str(gameSave)
@@ -328,7 +327,6 @@ class Driver:
 		snake = snakes.Snake("ghost", behaviorArgs=[moves], **snakeKwargs, color=color)
 		gameEnvironment = environment.Environment(snake, mapSize, origin=origin, food=food)
 		games.playGame(gameEnvironment)
-		print()
 		ui.checkSave(gameEnvironment, self._saveGame)
 		
 	def _makeInitialPopulation(self, algoIndex, algoChoice, population):

@@ -26,9 +26,9 @@ def smartShield(head, localDirection, lethalMoves):
 
 	return localDirection
 	
-def getPath(environment, body, length: str):
+def getPath(environment, body, length: str, depth=-1):
 	if length == "short":
-		return brain.pathfind(environment, body[0], environment.filter(1)[0])[:-1]
+		return brain.pathfind(environment, body[0], environment.filter(1)[0], depth=depth)[:-1]
 	else:  # length == "long"
 		return brain.longPathfind(environment, body[0], environment.filter(1)[0])[:-1]
 

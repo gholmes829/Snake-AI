@@ -275,7 +275,7 @@ class Snake:
 		percents = [algoCount / totalDecisions for algoCount in algoUsage.values()]
 		#algosHeavilyUsed = sum([1 for percent in percents if percent > heavyUseThreshold])
 		excessiveReliance = any([1 for percent in percents if percent > 1 - heavyUseThreshold])
-		score = ((snake.score ** 3) * snake.age) / 10000000 / (0.01 * snake.behavior.numOpenAdjacent + 1) + 1 if not excessiveReliance else 0
+		score = ((snake.score ** 3) * snake.age) / 10000000 / + 1 if not excessiveReliance else 0
 		return score  # meta controller training
 	
 	@staticmethod

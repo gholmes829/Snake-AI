@@ -285,7 +285,7 @@ def longPathfind(space, origin, target, impassable=-1) -> list:
 
 	
 
-def pathfind(space, origin, target, impassable=-1) -> list:
+def pathfind(space, origin, target, impassable=-1, depth=-1) -> list:
 	"""
 	A* pathfinding.
 	"""
@@ -302,7 +302,7 @@ def pathfind(space, origin, target, impassable=-1) -> list:
 	
 	frontier.put((0, 0, origin))
 
-	while not frontier.empty() and (current := frontier.get()[2]) != target:
+	while not frontier.empty() and (current := frontier.get()[2]) != target and (added <= depth or not (depth + 1)):
 		for direction in directions:
 			if (neighbor := (current[0] + direction[0], current[1] + direction[1])) in passable or neighbor == target:
 				cost = costSoFar[current] + 1
