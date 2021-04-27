@@ -9,7 +9,6 @@ getDictInfo() -> str
 	   Provides basic info about settings in dict format.
 """
 import os
-
 import psutil
 
 title = "Snake AI"
@@ -49,7 +48,7 @@ def hungerFunc(size):
 
 	
 smartShield = False  # allow behavior to overwrite AI neural network decisions
-networkArchitecture = (24, 16, 16, 3)  # FFNN layers
+networkArchitecture = (24, 16, 3)  # FFNN layers
 metaNetworkArchitecture = (16, 12, 3)
 
 # HELPER
