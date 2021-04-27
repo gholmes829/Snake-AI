@@ -534,7 +534,6 @@ class Replay:
 			List of (x, y) moves
 		"""
 		self.memories = memories
-		self.t = 0
 
 	def __call__(self) -> tuple:
 		"""
@@ -554,11 +553,12 @@ class Replay:
         
 		return self.nextDirection, self.nextMove
 		
-	def calcMoves(self, body, direction, awareness, environment, hunger):  
-		# index error next line when user closes GUI window before game is done!
-		self.nextDirection = self.memories[self.t]
-		self.nextMove = brain.getOrientedDirection(direction, self.nextDirection, "global")
-		self.t += 1
+	def calcMoves(self, body, direction, awareness, environment, hunger):
+		if self.memories:
+			self.nextDirection = self.memories.pop()
+			self.nextMove = brain.getOrientedDirection(direction, self.nextDirection, "global")
+		else:
+			self.nextMove, self.nextDirection = (0, 0), (0, 0)
 		
 	def getBrain(self):
 		return {"type": "behavior"}

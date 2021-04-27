@@ -140,7 +140,7 @@ class Driver:
 			print("\nNo game to re-watch!")
 		else:
 			data = self.prevGameEnvironment.getData()
-			self._replay(data["moves"], data["origin"], data["food"], data["mapSize"], data["color"])
+			self._replay(data["moves"][::-1], data["origin"], data["food"], data["mapSize"], data["color"])
 
 	def _watchSaved(self) -> None:
 		"""Allows user to select saevd game from .../replays and replays it in GUI window"""
