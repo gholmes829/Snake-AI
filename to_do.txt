@@ -32,5 +32,4 @@ OTHER
 - add github documentation
 - add html documentation
 - add docstrings
-- modify .gitignore to remove previously trained generations
 - add requirements.txt to use with PIP
