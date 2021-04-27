@@ -5,4 +5,7 @@ __pycache__/
 venv/
 
 data/**
+!data/**/
+!data/**/.gitkeep
+!data/trained/**
 !**/.gitkeep
