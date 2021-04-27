@@ -6,6 +6,3 @@ venv/
 
 data/**
 
-
-!data/trained/**
-!**/.gitkeep
