@@ -5,6 +5,7 @@ KNOWN BUGS
 - keyboard excpetion when training with multiproccessing can lead to looping exceptions
 - keyboard exception when training may not join pools properly
 - plotting chart unoptimized
+- some saved models have incompatible architectures
 
 FEATURES TO ADD
 - testing
