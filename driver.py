@@ -145,6 +145,7 @@ class Driver:
 	def _watchSaved(self) -> None:
 		"""Allows user to select saevd game from .../replays and replays it in GUI window"""
 		replayFiles = os.listdir(self.paths["replays"])
+		replayFiles.remove(".gitkeep")
 		numReplays = len(replayFiles)
 		if len(replayFiles) == 0:
 			print("\nNo saved replays!")
@@ -222,7 +223,8 @@ class Driver:
 			trainingTimer = time()
 			
 			# initialize paths and files
-			if len(dnaFiles := os.listdir(self.paths["dna"])) > 0:
+			if len(dnaFiles := os.listdir(self.paths["dna"])) > 1:
+				dnaFiles.remove(".gitkeep")
 				currEvolution = max([int(file[file.index("_")+1:]) for file in dnaFiles if file[:10] == "evolution_"]) + 1
 			else:
 				currEvolution = 1
@@ -333,6 +335,7 @@ class Driver:
 	def _makeInitialPopulation(self, algoIndex, algoChoice, population):
 		modelsPath = self.paths["neural_net"]
 		trainedFiles = os.listdir(modelsPath)
+		trainedFiles.remove(".gitkeep")
 		
 		if len(trainedFiles) == 0 or (len(trainedFiles) < 3 and algoChoice == "Hierarchical"):
 			print("No enough trained AI!\n")
@@ -407,6 +410,7 @@ class Driver:
 			}[algoChoice]
 			
 			trainedFiles = os.listdir(modelsPath)
+			trainedFiles.remove(".gitkeep")
 			
 			if len(trainedFiles) == 0:
 				print("No trained AI!\n")
