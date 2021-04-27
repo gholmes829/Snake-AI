@@ -5,6 +5,4 @@ __pycache__/
 venv/
 
 data/**
-!data/**/.gitkeep
 !**/.gitkeep
-!.gitkeep
