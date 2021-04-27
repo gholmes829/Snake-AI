@@ -4,7 +4,7 @@ __pycache__/
 
 venv/
 
-data/**
+data/**/**
 
 !data/trained/**
 !**/.gitkeep
