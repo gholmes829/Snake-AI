@@ -13,7 +13,7 @@ FEATURES TO ADD
 - potentially limit CPU core usage
 - save most recent trained evolution to pause and resume training
 - add battle mode
-- generate graph post training
+- generate evolution graph post training
 - diversification algorithm for initial training population
 
 CHANGES
@@ -29,4 +29,4 @@ OTHER
 - add html documentation
 - add docstrings
 - modify .gitignore to remove previously trained generations
-- add requirements.txt  to use with PIP
+- add requirements.txt to use with PIP
