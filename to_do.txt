@@ -1,0 +1,32 @@
+KNOWN BUGS
+- doc strings on settings.txt for each evolution parsed incorrectly
+- meta controller limited to depth=2 and #(TN)=3
+- keyboard excpetion when training with multiproccessing can lead to looping exceptions
+- keyboard exception when training may not join pools properly
+- plotting chart unoptimized
+- can crash when playing last game
+
+FEATURES TO ADD
+- testing
+- add bash scripts to make ops more convenient (training, playing, resetting)
+- add settings to visualize multiple snakes training at once
+- potentially limit CPU core usage
+- save most recent trained evolution to pause and resume training
+- add battle mode
+- generate graph post training
+- diversification algorithm for initial training population
+
+CHANGES
+- change NN output to softmax, make activation functions modular
+
+REFACTORING
+- settings.py
+- renamne trained models
+- testing
+
+OTHER
+- add github documentation
+- add html documentation
+- add docstrings
+- modify .gitignore to remove previously trained generations
+- add requirements.txt  to use with PIP

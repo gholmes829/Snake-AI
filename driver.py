@@ -120,12 +120,13 @@ class Driver:
 						avgUsage[algo] += snake.behavior.algoUsage[algo]
 				print("Game", str(i+1) + " snake size:", snake.size)
 			elapsed = time() - timer
-			if not numGames-1:
+			if not numGames - 1:
 				print()
 				ui.checkSave(gameEnvironment, self._saveGame)
 				self.prevGameEnvironment = gameEnvironment
 			else:
 				print("\nTime elapsed across", str(numGames) + " games:", round(elapsed, 5), "secs")
+				print("Average time per game", round(elapsed/numGames, 5), "secs")
 				print("Average snake score:", round(sum(scores)/numGames, 2))
 				print("Scores std:", round(np.std(scores), 3))
 				if algoChoice in {"Multi", "Hierarchical"}:
@@ -179,7 +180,7 @@ class Driver:
 			print("\nError: Population size must be at least 10. Change size in settings.py.")
 			return
 		
-		algoIndex, algoChoice = ui.getSelection("Neural Network", "Multi", "Hierarchical", "Back", msg="\nSelect training type:")
+		algoIndex, algoChoice = ui.getSelection("Neural Network", "Multi", "Hierarchical", "Back", msg="Select training type:")
 		if algoChoice != "Back" and (initialPopulation := self._makeInitialPopulation(algoIndex, algoChoice, population)) is not None:
 			colorCross = None
 			#colorCross = snakes.Snake.mergeTraits  # include color crossing

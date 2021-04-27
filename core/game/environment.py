@@ -72,8 +72,8 @@ class Environment:
 		food: list, optional
 			List of food positions, if not passed in food placed randomly in open space
 		"""
-		self.gameMap = Map(mapSize)
 		self.origin = origin
+		self.gameMap = Map(mapSize)
 		
 		self.snake = snake
 		self.prevSnakeBody = None
@@ -196,7 +196,7 @@ class Map(dict):
 	filter(target: int) -> list:
 		Provides coordinates of map that contain target value.
 	"""
-	def __init__(self, size: tuple) -> None:
+	def __init__(self, size: tuple, inverted=True) -> None:
 		"""
 		Initializes map to target size.
 
@@ -207,10 +207,12 @@ class Map(dict):
 		"""
 		dict.__init__(self)
 		self.size = size
+		self.inverted=inverted
 		self.area = size[0] * size[1]
 		edges = ({-1, size[0]}, {-1, size[1]})
 		self.innerPerimeter = 2 * (size[0] + size[1])
 		self.outerPerimeter = 2 * (size[0] + size[1]) + 4
+		self.inverse = {}
 		for i in range(-1, size[0] + 1):
 			for j in range(-1, size[1] + 1):
 				if i in edges[0] or j in edges[1]:
@@ -231,8 +233,24 @@ class Map(dict):
 		-------
 		list: list of coordinates containing target value
 		"""
-		return [coord for coord, val in self.items() if val == target]
-
+		if self.inverted:
+			return list(self.inverse[target])
+		else:
+			return [coord for coord, val in self.items() if val == target]
+	
+	
+	def __setitem__(self, key, item):
+		"""
+		Handles inverse
+		"""
+		if self.inverted:
+			if key in self:
+				self.inverse[self[key]].remove(key)
+			if item not in self.inverse:
+				self.inverse[item] = set()
+			self.inverse[item].add(key)
+		super().__setitem__(key, item)		
+	
 	def __str__(self):
 		return self.__repr__()
 

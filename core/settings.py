@@ -33,7 +33,7 @@ targetFPS = 60
 smoothness = 3  # controls how fast and smooth animations run
 
 # GENETICS
-populationSize = 50
+populationSize = 250
 generations = 1000
 
 displayTraining = False  # displays best snake after each generation during training
@@ -49,7 +49,7 @@ def hungerFunc(size):
 
 	
 smartShield = False  # allow behavior to overwrite AI neural network decisions
-networkArchitecture = (24, 16, 3)  # FFNN layers
+networkArchitecture = (24, 16, 16, 3)  # FFNN layers
 metaNetworkArchitecture = (16, 12, 3)
 
 # HELPER
