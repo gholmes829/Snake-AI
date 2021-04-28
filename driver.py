@@ -358,7 +358,7 @@ class Driver:
 		# MAKE CHOICE FOR USER TO GO BACK
 		if algoChoice == "Multi":
 			# print CHOICE, A FINE SELECTION!
-			modelIndex, choice = ui.getSelection(*trainedFiles, msg="\nSelect AI to use for neural network:")
+			modelIndex, choice = ui.getSelection(*trainedFiles, msg="Select AI to use for neural network:")
 			modelFile = trainedFiles[modelIndex]
 			modelPath = os.path.join(modelsPath, modelFile)
 			data = self._loadSnakeData(modelPath, "Neural Network")
