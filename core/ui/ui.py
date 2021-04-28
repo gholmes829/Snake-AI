@@ -90,6 +90,8 @@ def checkSave(data, callback, msg="Save?"):
 		print()
 		name = getValidInput("Name?")
 		callback(data, name)
+	else:
+		print()
 		
 def formatTime(time):
 	return str(int(time//3600)) + " hrs " + str(int((time//60)%60)) + " mins " + str(int(time%60)) + " secs"

@@ -412,7 +412,7 @@ class Driver:
 			trainedFiles.remove(".gitkeep")
 			
 			if len(trainedFiles) == 0:
-				print("No trained AI!\n")
+				print("No trained AI for choice!\n")
 				return  # go back a page
 				
 			modelIndex, modelChoice = ui.getSelection(*trainedFiles, "Back", msg="Select AI to use:")
