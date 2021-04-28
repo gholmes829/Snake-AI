@@ -224,6 +224,7 @@ class Driver:
 			# initialize paths and files
 			if len(dnaFiles := os.listdir(self.paths["dna"])) > 1:
 				dnaFiles.remove(".gitkeep")
+                
 				currEvolution = max([int(file[file.index("_")+1:]) for file in dnaFiles if file[:10] == "evolution_"]) + 1
 			else:
 				currEvolution = 1
@@ -300,6 +301,9 @@ class Driver:
 				if settings.displayTraining:
 					games.playTrainingGame(bestSnake, render=False)  # best snake of gen plays game in GUI window
 				print()
+			print("Cleaning up...") 
+			print("Please close figure to continue...")  
+			print()              
 			evolution.cleanup()
 			snakeDNA.cleanup()
 			

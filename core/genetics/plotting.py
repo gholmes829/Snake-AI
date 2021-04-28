@@ -95,5 +95,4 @@ class EvolutionGraph:
 	def cleanup(self):
 		if self._active:
 			self.p.join()
-
 	

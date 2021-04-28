@@ -213,7 +213,6 @@ class Genetics:
 		"""Cleans up multiprocessing pool"""
 		self.pool.close()
 		self.pool.join()
-		print("Cleaning up...")
 		
 	def _evaluate(self, population: list, parallelize: bool = True) -> list:
 		"""
