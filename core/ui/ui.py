@@ -85,7 +85,7 @@ def runModes(modes):
 
 def checkSave(data, callback, msg="Save?"):
 	"""Checks to see if user wants to save."""
-	index, _ = getSelection("Yes", "No", msg=msg)
+	index, _ = getSelection("Yes", "No", msg=msg, end="")
 	if not index:
 		print()
 		name = getValidInput("Name?")

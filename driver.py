@@ -148,7 +148,7 @@ class Driver:
 		replayFiles.remove(".gitkeep")
 		numReplays = len(replayFiles)
 		if len(replayFiles) == 0:
-			print("\nNo saved replays!")
+			print("No saved replays!\n")
 		else:
 			msg = "Select game to replay:"
 			for i, gameSave in enumerate(replayFiles, start=1):

@@ -8,7 +8,6 @@ KNOWN BUGS
 - some saved models have incompatible architectures
 
 FEATURES TO ADD
-- testing
 - command line args for script interface
 - make hierarchical controller scalable
 - add bash scripts to make ops more convenient (training, playing, resetting)
@@ -25,7 +24,7 @@ CHANGES
 
 REFACTORING
 - settings.py
-- renamne trained models
+- rename trained models
 - testing
 
 OTHER
