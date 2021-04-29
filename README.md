@@ -6,7 +6,7 @@ Train, manage, and control your own AI snakes playing an incredibly classic game
 ## Get started:
 * Download Python 3.8+ `https://www.python.org/downloads/`
 * Clone repository `git clone https://github.com/gholmes829/Snake-AI.git`
-* Install dependencies `python -m pip install -r requirements.txt`
+* Install dependencies `python3 -m pip install -r requirements.txt`
 * Run with `python __main__.py`
 
 ## Command Line Arguments:
