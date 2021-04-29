@@ -441,7 +441,7 @@ class Hierarchical:
 		
 		
 		vision, visionBounds = brain.castRays(head, direction, environment, awareness["maxVision"])
-		features = vision  # delete, trying using only og features
+		features = vision  # delete, trying using only original features
 		
 		
 		self.algoIndex = np.argmax(self.metaNetwork.feedForward(features))
@@ -449,6 +449,8 @@ class Hierarchical:
 		self.algoUsage[self.algoName] += 1
 		
 		self.nextDirection, self.nextMove = self.getNetworkDecision(self.networks[self.algoIndex], body, direction, vision)
+        
+		return {"visionBounds": visionBounds}     
 		
 	def __call__(self):
 		return self.nextDirection, self.nextMove
