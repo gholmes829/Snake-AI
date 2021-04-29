@@ -14,7 +14,7 @@ import psutil
 title = "Snake AI"
 
 # SCREEN AND MAP
-screenSize = (650, 650)
+screenSize = (600, 600)
 mapSize = (15, 15)
 area = mapSize[0] * mapSize[1]
 order = 3
