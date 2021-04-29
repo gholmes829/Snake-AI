@@ -1,5 +1,5 @@
 # Snake-AI
-AI snakes! Better description coming soon...
+Train, manage, and control your own AI snakes playing an incredibly classic game!
 
 ## Get started:
 * Download Python 3.8+ `https://www.python.org/downloads/`
