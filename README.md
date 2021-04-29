@@ -9,13 +9,13 @@ Train, manage, and control your own AI snakes playing an incredibly classic game
 * Install dependencies `python3 -m pip install -r requirements.txt`
 * Run with `python3 __main__.py`
 
+_Note: Windows users may need to run commands with `python` instead of `python3`_
+
 ## Command Line Arguments:
 * Classic player control `python3 __main__.py -player`
 * Select an AI to play `python3 __main__.py -ai`
 * Watch a saved game `python3 __main__.py -saved`
 * Train AI snakes `python3 __main__.py -train`
-
-_Note: Windows users may need to run above commands with `python` instead of `python3`_
 
 ## Types of AI:
 * Neural Network, uses a deep neural network to output left, straight, or right
