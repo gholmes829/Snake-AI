@@ -14,9 +14,9 @@ AI snakes! Better description coming soon...
 * Train AI snakes `python __main__.py -train`
 
 ## Types of AI:
-* Neural Network -- uses a simple feed forward neural network to output left, straight, or right
+* Neural Network -- uses a deep neural network to output left, straight, or right
 * Pathfinding -- uses an A* algorithm with backup floodfill to find direct paths to food
 * Floodfill -- moves towards food but always tries to move in direction resulting in most open spaces
-* Cycle -- attempts to approximate a hamiltonian cycle, can win game when when starting at top with even map size
-* Multi -- specialized neural network that intelligently chooses between pathfinding, cycle, and neural network as game progresses
-* Hierarchical -- specialized neural network that intelligently chooses between three different neural networks as game progresses
+* Cycle -- calculates hamiltonian cycle approximation for path
+* Multi -- specialized neural network that chooses between pathfinding, cycle, and neural network as game progresses
+* Hierarchical -- specialized neural network chooses between three different neural networks as game progresses
