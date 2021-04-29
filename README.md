@@ -1,5 +1,5 @@
 # Snake-AI
-Train, manage, and control your own AI snakes playing an incredibly classic game!
+Train, manage, and control your own AI snakes playing an incredibly classic game! The training uses genetic algorithms and employs multiprocessing to speed up the process. Read below to learn about the different types of AI!
 
 ## Get started:
 * Download Python 3.8+ `https://www.python.org/downloads/`
