@@ -80,8 +80,16 @@ class Driver:
 			("Exit", self._exit)
 		]
 		
-		if len(arguments) == 1 and re.match("-[1-5]", arguments[0]):
-			modes[int(arguments[0][1:]) - 1][1]()
+		mapping = {
+			"player": 0,
+			"ai": 1,
+			"saved": 3,
+			"train": 4
+        }
+        
+		if len(arguments) == 1 and (key := arguments[0][1:]) in mapping:
+			print("Running " + key + "...\n")      
+			modes[mapping[key]][1]()
 			print("Exiting!")
 			self._exit()
 		else:
