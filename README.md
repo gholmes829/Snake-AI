@@ -1,5 +1,7 @@
 # Snake-AI
-Under development. Current version works well but is not 100% polished.
+AI snakes!
+
+Clone repository: `git pull https://github.com/gholmes829/Snake-AI.git`
 
 Install dependencies: `python -m pip install -r requirements.txt`
 
