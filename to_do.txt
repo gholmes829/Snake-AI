@@ -1,13 +1,9 @@
-Note: almost all use cases work exactly as intended. Most bugs occur when closing windows in certain ways. Features to add are just new ideas and are not necessary. Items in other category should be done soon.
-
 KNOWN BUGS
 - doc strings on settings.txt for each evolution parsed incorrectly
-- keyboard excpetion when training with multiproccessing can lead to looping exceptions
-- keyboard exception when training may not join pools properly
-- plotting chart unoptimized
-- some saved models have incompatible architectures
+- keyboard excpetion when training with multiproccessing can lead to looping exceptions and may not join pools properly
+- plotting chart unoptimized, should switch to built in animation
 
-FEATURES TO ADD
+FEATURES TO ADD (MAYBE)
 - command line args for script interface
 - make hierarchical controller scalable
 - add bash scripts to make ops more convenient (training, playing, resetting)
@@ -19,16 +15,10 @@ FEATURES TO ADD
 - diversification algorithm for initial training population
 - easier ability to train meta and hierarchical
 
-CHANGES
-- change NN output to softmax, make activation functions modular
-
-REFACTORING
+MIGHT REFACTOR
 - settings.py
 - rename trained models
-- testing
 
 OTHER
-- add github documentation
 - add html documentation
 - add docstrings
-- add requirements.txt to use with PIP
