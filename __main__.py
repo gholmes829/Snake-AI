@@ -1,5 +1,6 @@
-#!/usr/bin/env python3
 """Entry point to program."""
+
+import sys
 
 from driver import Driver
 
@@ -7,11 +8,11 @@ __author__ = "Grant Holmes"
 __email__ = "g.holmes429@gmail.com"
 
 
-def main():
+def main(arguments):
     """Main func."""
     driver = Driver()
-    driver.run()
+    driver.run(arguments)
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

@@ -76,12 +76,12 @@ def saveToJSON(data, path, indent=4) -> None:
 		
 def runModes(modes):
 	mode = None
-	modes, callbacks = list(zip(*modes))
+	modes, callbacks = list(zip(*modes))     
 	while mode != "Exit":
-		index, mode = getSelection(*modes, msg="Select mode:", end="")
-		if mode != "Exit":
-			print()		
-		callbacks[index]()
+		index, mode = getSelection(*modes, msg="Select mode:", end="\n")
+		if mode == "Exit":
+			print("Exiting!")        
+		callbacks[index]() 
 
 def checkSave(data, callback, msg="Save?"):
 	"""Checks to see if user wants to save."""

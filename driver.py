@@ -9,6 +9,7 @@ Driver
 
 import os
 import sys
+import re
 
 import json
 import numpy as np
@@ -68,7 +69,7 @@ class Driver:
 		print("Initialized with the following settings:")
 		print(settings.getInfo(), "\n")
 
-	def run(self) -> None:
+	def run(self, arguments: list = None) -> None:
 		"""Allows user to select mode, runs mode."""
 		modes = [
 			("Play Classic", self._playClassic),
@@ -76,11 +77,15 @@ class Driver:
 			("Replay Last Game", self._watchReplay),
 			("Watch Saved", self._watchSaved),
 			("Train AI", self._trainAI),
-			("Exit", lambda: sys.exit())
+			("Exit", self._exit)
 		]
 		
-		ui.runModes(modes)
-			
+		if len(arguments) == 1 and re.match("-[1-5]", arguments[0]):
+			modes[int(arguments[0][1:]) - 1][1]()
+			print("Exiting!")
+			self._exit()
+		else:
+			ui.runModes(modes)
 			
 	def _playClassic(self) -> None:
 		"""Opens GUI window and lets user play Snake with keyboard controls."""
@@ -335,6 +340,9 @@ class Driver:
 		games.playGame(gameEnvironment)
 		ui.checkSave(gameEnvironment, self._saveGame)
 		
+	def _exit(self):
+		sys.exit()
+        
 	def _makeInitialPopulation(self, algoIndex, algoChoice, population):
 		modelsPath = self.paths["neural_net"]
 		trainedFiles = os.listdir(modelsPath)
