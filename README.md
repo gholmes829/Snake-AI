@@ -24,5 +24,5 @@ Train, manage, and control your own AI snakes playing an incredibly classic game
 ## Notes:
 * Change settings in `core\settings.py` including map size, target frame rate, default architectures and more
 * Cycle AI can consistently win game if map size is square, even, and snake spawns in top row horizontally
-* Hierarchical is the best overall AI 
+* Hierarchical is the best overall AI in terms of both performance and consistency
 * My personal best score is like 25 or something which is why I needed to make the AI
