@@ -1,5 +1,5 @@
 # Snake-AI
-AI snakes!
+AI snakes! Better description coming soon...
 
 Clone repository: `git pull https://github.com/gholmes829/Snake-AI.git`
 
