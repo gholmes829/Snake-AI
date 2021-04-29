@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module brain</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>brain</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:c%3A%5Cusers%5Cgholm%5Cdesktop%5Csnake-ai%5Ccore%5Cgame%5Cbrain.py">c:\users\gholm\desktop\snake-ai\core\game\brain.py</a></font></td></tr></table>
+    <p></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="numpy.html">numpy</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="builtins.html#object">builtins.object</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="brain.html#FFNN">FFNN</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FFNN">class <strong>FFNN</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt><a href="#FFNN">FFNN</a>(layerSizes:&nbsp;list,&nbsp;activation:&nbsp;str&nbsp;=&nbsp;'sigmoid',&nbsp;weights:&nbsp;list&nbsp;=&nbsp;None,&nbsp;biases:&nbsp;list&nbsp;=&nbsp;None)&nbsp;-&amp;gt;&nbsp;None<br>
+&nbsp;<br>
+Feed&nbsp;forward&nbsp;neural&nbsp;network&nbsp;without&nbsp;backpropogation.<br>
+&nbsp;<br>
+Public&nbsp;Methods<br>
+--------------<br>
+<a href="#FFNN-feedForward">feedForward</a>(inputs)&nbsp;-&gt;&nbsp;np.ndarray:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Feeds&nbsp;inputs&nbsp;through&nbsp;neural&nbsp;net&nbsp;to&nbsp;obtain&nbsp;output.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="FFNN-__init__"><strong>__init__</strong></a>(self, layerSizes: list, activation: str = 'sigmoid', weights: list = None, biases: list = None) -&gt; None</dt><dd><tt>Initializes.<br>
+&nbsp;<br>
+Parameters<br>
+----------<br>
+layerSizes:&nbsp;list<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Layer&nbsp;architecture<br>
+activation:&nbsp;str,&nbsp;default="sigmoid"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;String&nbsp;denoting&nbsp;activation&nbsp;function&nbsp;to&nbsp;use<br>
+weights:&nbsp;list,&nbsp;optional<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;List&nbsp;of&nbsp;arrays&nbsp;of&nbsp;weights&nbsp;for&nbsp;each&nbsp;layer,&nbsp;randomized&nbsp;if&nbsp;not&nbsp;passed&nbsp;in<br>
+biases:&nbsp;list,&nbsp;optional<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;List&nbsp;of&nbsp;arrays&nbsp;of&nbsp;biases&nbsp;for&nbsp;each&nbsp;layer,&nbsp;randomized&nbsp;if&nbsp;not&nbsp;passed&nbsp;in</tt></dd></dl>
+
+<dl><dt><a name="FFNN-feedForward"><strong>feedForward</strong></a>(self, inputs: numpy.ndarray) -&gt; numpy.ndarray</dt><dd><tt>Feeds&nbsp;inputs&nbsp;through&nbsp;neural&nbsp;net&nbsp;to&nbsp;obtain&nbsp;output.<br>
+&nbsp;<br>
+Parameters<br>
+----------<br>
+inputs:&nbsp;np.ndarray<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Inputs&nbsp;to&nbsp;neural&nbsp;network<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+np.ndarray:&nbsp;input&nbsp;after&nbsp;fed&nbsp;through&nbsp;neural&nbsp;network</tt></dd></dl>
+
+<hr>
+Static methods defined here:<br>
+<dl><dt><a name="FFNN-reLu"><strong>reLu</strong></a>(x: float) -&gt; float</dt><dd><tt>Rectified&nbsp;linear&nbsp;unit.</tt></dd></dl>
+
+<dl><dt><a name="FFNN-sigmoid"><strong>sigmoid</strong></a>(x: float) -&gt; float</dt><dd><tt>Sigmoid.</tt></dd></dl>
+
+<dl><dt><a name="FFNN-softmax"><strong>softmax</strong></a>(v: numpy.ndarray) -&gt; numpy.ndarray</dt><dd><tt>Softmax&nbsp;probability&nbsp;output.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-castRays"><strong>castRays</strong></a>(origin, orientation, space, rayLength) -&gt; list</dt><dd><tt>Cast&nbsp;octilinear&nbsp;rays&nbsp;out&nbsp;from&nbsp;Snake's&nbsp;head&nbsp;to&nbsp;provide&nbsp;Snake&nbsp;awareness&nbsp;of&nbsp;its&nbsp;surroundings.<br>
+&nbsp;<br>
+Note<br>
+----<br>
+'Closeness'&nbsp;defined&nbsp;as&nbsp;1/dist.</tt></dd></dl>
+ <dl><dt><a name="-dist"><strong>dist</strong></a>(pt1: tuple, pt2: tuple) -&gt; float</dt><dd><tt>Procides&nbsp;Euclidean&nbsp;distance,&nbsp;accelerated&nbsp;with&nbsp;jit.<br>
+&nbsp;<br>
+Parameters<br>
+----------<br>
+pt1:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;First&nbsp;point<br>
+pt2:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Second&nbsp;point<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+float:&nbsp;Euclidean&nbsp;distance</tt></dd></dl>
+ <dl><dt><a name="-distOpt"><strong>distOpt</strong></a>(pt1: tuple, pt2: tuple) -&gt; float</dt><dd><tt>Procides&nbsp;Euclidean&nbsp;distance,&nbsp;accelerated&nbsp;with&nbsp;jit.<br>
+&nbsp;<br>
+Parameters<br>
+----------<br>
+pt1:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;First&nbsp;point<br>
+pt2:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Second&nbsp;point<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+float:&nbsp;Euclidean&nbsp;distance</tt></dd></dl>
+ <dl><dt><a name="-floodFillCount"><strong>floodFillCount</strong></a>(space, origin, impassable=-1, considerOrigin=True, depth=25)</dt><dd><tt>#&nbsp;FLOODFILL&nbsp;COUNT</tt></dd></dl>
+ <dl><dt><a name="-getOrientedDirection"><strong>getOrientedDirection</strong></a>(currDirection, newDirection, directionType) -&gt; tuple</dt></dl>
+ <dl><dt><a name="-localizeDirection"><strong>localizeDirection</strong></a>(basis: tuple, direction: tuple) -&gt; tuple</dt><dd><tt>Reorients&nbsp;direction&nbsp;to&nbsp;perspective&nbsp;of&nbsp;basis.<br>
+&nbsp;<br>
+Parameters<br>
+----------<br>
+basis:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Local&nbsp;direction<br>
+direction:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Global&nbsp;direction<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+tuple:&nbsp;reoriented&nbsp;direction.</tt></dd></dl>
+ <dl><dt><a name="-longPathHelper"><strong>longPathHelper</strong></a>(space, path, i, looseTarget, depth, impassable=-1, corner=True)</dt></dl>
+ <dl><dt><a name="-longPathfind"><strong>longPathfind</strong></a>(space, origin, target, impassable=-1) -&gt; list</dt><dd><tt>A*&nbsp;pathfinding.</tt></dd></dl>
+ <dl><dt><a name="-longestPath"><strong>longestPath</strong></a>(space, origin, target, looseTarget=None, impassable=-1, depth=2, path=None) -&gt; list</dt></dl>
+ <dl><dt><a name="-pathfind"><strong>pathfind</strong></a>(space, origin, target, impassable=-1, depth=-1) -&gt; list</dt><dd><tt>A*&nbsp;pathfinding.</tt></dd></dl>
+ <dl><dt><a name="-rotate"><strong>rotate</strong></a>(v, theta)</dt></dl>
+ <dl><dt><a name="-rotationGenerator"><strong>rotationGenerator</strong></a>(theta)</dt><dd><tt>Returns&nbsp;lambda&nbsp;func&nbsp;to&nbsp;rotate&nbsp;tuple&nbsp;CCW&nbsp;by&nbsp;theta&nbsp;degrees</tt></dd></dl>
+ <dl><dt><strong>tempLocal</strong> <em>lambda</em> currDirection</dt></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>DANGER</strong> = -1<br>
+<strong>DIAGONAL</strong> = [(1, -1), (1, 1), (-1, 1), (-1, -1)]<br>
+<strong>DIRECTIONS</strong> = [(0, -1), (1, 0), (0, 1), (-1, 0), (1, -1), (1, 1), (-1, 1), (-1, -1)]<br>
+<strong>DIRECTIONS_STR</strong> = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'UP_RIGHT', 'DOWN_RIGHT', 'DOWN_LEFT', 'UP_LEFT']<br>
+<strong>DOWN</strong> = (0, 1)<br>
+<strong>DOWN_LEFT</strong> = (-1, 1)<br>
+<strong>DOWN_RIGHT</strong> = (1, 1)<br>
+<strong>EMPTY</strong> = 0<br>
+<strong>FOOD</strong> = 1<br>
+<strong>LEFT</strong> = (-1, 0)<br>
+<strong>NORMAL_DIRECTIONS</strong> = [(0, 1), (1, 0), (0, -1), (-1, 0), (1, 1), (1, -1), (-1, -1), (-1, 1)]<br>
+<strong>NORMAL_ORTHOGONAL</strong> = [(0, 1), (1, 0), (0, -1), (-1, 0)]<br>
+<strong>ORTHOGONAL</strong> = [(0, -1), (1, 0), (0, 1), (-1, 0)]<br>
+<strong>RIGHT</strong> = (1, 0)<br>
+<strong>SNAKE_COLORS</strong> = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 0, 255), (255, 255, 0), (255, 165, 0), (234, 10, 142), (0, 0, 0)]<br>
+<strong>UP</strong> = (0, -1)<br>
+<strong>UP_LEFT</strong> = (-1, -1)<br>
+<strong>UP_RIGHT</strong> = (1, -1)<br>
+<strong>curr</strong> = (-1, 0)<br>
+<strong>key</strong> = (0.70711, 0.70711)<br>
+<strong>localizedDirections</strong> = {((-1, 0), (-1, -1)): (1, 1), ((-1, 0), (-1, 0)): (0, 1), ((-1, 0), (-1, 1)): (-1, 1), ((-1, 0), (0, -1)): (1, 0), ((-1, 0), (0, 1)): (-1, 0), ((-1, 0), (1, -1)): (1, -1), ((-1, 0), (1, 0)): (0, -1), ((-1, 0), (1, 1)): (-1, -1), ((0, -1), (-1, -1)): (-1, 1), ((0, -1), (-1, 0)): (-1, 0), ...}<br>
+<strong>new</strong> = (-1, -1)<br>
+<strong>orientedDirections</strong> = {('global', (-1, 0), (-1, -1)): (1, 1), ('global', (-1, 0), (-1, 0)): (0, 1), ('global', (-1, 0), (-1, 1)): (-1, 1), ('global', (-1, 0), (0, -1)): (1, 0), ('global', (-1, 0), (0, 1)): (-1, 0), ('global', (-1, 0), (1, -1)): (1, -1), ('global', (-1, 0), (1, 0)): (0, -1), ('global', (-1, 0), (1, 1)): (-1, -1), ('global', (0, -1), (-1, -1)): (-1, 1), ('global', (0, -1), (-1, 0)): (-1, 0), ...}<br>
+<strong>possibleNew</strong> = {(-1.0, -1.0): (1, 1), (-1, 0): (0, 1), (-1.0, 1.0): (-1, 1), (-0.0, -1.0): (1, 0), (0.0, 1.0): (-1, 0), (1.0, -1.0): (1, -1), (1.0, -0.0): (0, -1), (1.0, 1.0): (-1, -1)}<br>
+<strong>rotations</strong> = {-315: &lt;function rotationGenerator.&lt;locals&gt;.&lt;lambda&gt;&gt;, -270: &lt;function rotationGenerator.&lt;locals&gt;.&lt;lambda&gt;&gt;, -225: &lt;function rotationGenerator.&lt;locals&gt;.&lt;lambda&gt;&gt;, -180: &lt;function rotationGenerator.&lt;locals&gt;.&lt;lambda&gt;&gt;, -135: &lt;function rotationGenerator.&lt;locals&gt;.&lt;lambda&gt;&gt;, -90: &lt;function rotationGenerator.&lt;locals&gt;.&lt;lambda&gt;&gt;, -45: &lt;function rotationGenerator.&lt;locals&gt;.&lt;lambda&gt;&gt;, 0: &lt;function rotationGenerator.&lt;locals&gt;.&lt;lambda&gt;&gt;, 45: &lt;function rotationGenerator.&lt;locals&gt;.&lt;lambda&gt;&gt;, 90: &lt;function rotationGenerator.&lt;locals&gt;.&lt;lambda&gt;&gt;, ...}<br>
+<strong>step</strong> = 7<br>
+<strong>tempNew</strong> = (((0.0, 1.0), (-1, 0)), ((-1, 0), (0, 1)), ((-0.0, -1.0), (1, 0)), ((1.0, -0.0), (0, -1)), ((-0.70711, -0.70711), (1, 1)), ((-0.70711, 0.70711), (-1, 1)), ((0.70711, -0.70711), (1, -1)), ((0.70711, 0.70711), (-1, -1)))<br>
+<strong>theta</strong> = 315<br>
+<strong>value</strong> = (-1, -1)</td></tr></table>
+</body></html>

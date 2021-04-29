@@ -1,0 +1,252 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module graphics</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>graphics</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:c%3A%5Cusers%5Cgholm%5Cdesktop%5Csnake-ai%5Ccore%5Cui%5Cgraphics.py">c:\users\gholm\desktop\snake-ai\core\ui\graphics.py</a></font></td></tr></table>
+    <p><tt>Pygame&nbsp;wrapper&nbsp;allowing&nbsp;for&nbsp;easy,&nbsp;convenient,&nbsp;and&nbsp;customizable&nbsp;GUI&nbsp;windows.<br>
+&nbsp;<br>
+Classes<br>
+-------<br>
+<a href="#Engine">Engine</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Used&nbsp;to&nbsp;render&nbsp;window&nbsp;and&nbsp;blit&nbsp;shapes&nbsp;and&nbsp;text&nbsp;to&nbsp;screen.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="pygame.html">pygame</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="builtins.html#object">builtins.object</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="graphics.html#Engine">Engine</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Engine">class <strong>Engine</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt><a href="#Engine">Engine</a>(screenSize:&nbsp;tuple,&nbsp;numGrids:&nbsp;tuple,&nbsp;checkered:&nbsp;bool&nbsp;=&nbsp;False,&nbsp;targetFPS:&nbsp;int&nbsp;=&nbsp;60,&nbsp;title:&nbsp;str&nbsp;=&nbsp;'Untitled&nbsp;Game',&nbsp;fontStyle:&nbsp;str&nbsp;=&nbsp;'impact',&nbsp;gridColors:&nbsp;tuple&nbsp;=&nbsp;('black',&nbsp;'white',&nbsp;'black'),&nbsp;record=False)&nbsp;-&amp;gt;&nbsp;None<br>
+&nbsp;<br>
+Used&nbsp;to&nbsp;render&nbsp;window&nbsp;and&nbsp;blit&nbsp;shapes&nbsp;and&nbsp;text&nbsp;to&nbsp;screen.<br>
+&nbsp;<br>
+Attributes<br>
+----------<br>
+targetFPS:&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Target&nbsp;frames&nbsp;per&nbsp;second<br>
+fontStyle:&nbsp;str<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Font&nbsp;style<br>
+clock:&nbsp;pygame.time.Clock<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Used&nbsp;to&nbsp;regulate&nbsp;game&nbsp;ticks&nbsp;and&nbsp;FPS<br>
+dt:&nbsp;float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Delta&nbsp;time,&nbsp;measurement&nbsp;of&nbsp;latency&nbsp;between&nbsp;frames,&nbsp;used&nbsp;to&nbsp;achieve&nbsp;frame&nbsp;rate&nbsp;motion&nbsp;independence<br>
+running:&nbsp;bool<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;engine&nbsp;is&nbsp;running<br>
+fontCache:&nbsp;dict<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Caches&nbsp;rendered&nbsp;fonts,&nbsp;improves&nbsp;performance<br>
+surfaceCache:&nbsp;dict<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Caches&nbsp;rendered&nbsp;surfaces,&nbsp;improves&nbsp;performance<br>
+background:&nbsp;pygame.Surface<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Background&nbsp;for&nbsp;active&nbsp;window<br>
+screen:&nbsp;pygame.Surface<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Background&nbsp;for&nbsp;entire&nbsp;screen<br>
+offset:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(x,&nbsp;y)&nbsp;offset&nbsp;for&nbsp;position&nbsp;of&nbsp;active&nbsp;window&nbsp;relative&nbsp;to&nbsp;screen<br>
+&nbsp;<br>
+Public&nbsp;Methods<br>
+--------------<br>
+<a href="#Engine-shouldRun">shouldRun</a>()&nbsp;-&gt;&nbsp;None:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Determines&nbsp;if&nbsp;engine&nbsp;should&nbsp;keep&nbsp;running.<br>
+<a href="#Engine-clearScreen">clearScreen</a>()&nbsp;-&gt;&nbsp;None:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Removes&nbsp;everything&nbsp;blitted&nbsp;on&nbsp;screen&nbsp;by&nbsp;covering&nbsp;everything&nbsp;with&nbsp;background.<br>
+<a href="#Engine-updateScreen">updateScreen</a>()&nbsp;-&gt;&nbsp;None:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Renders&nbsp;necessary&nbsp;components&nbsp;to&nbsp;screen.<br>
+<a href="#Engine-exit">exit</a>()&nbsp;-&gt;&nbsp;None:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Has&nbsp;engine&nbsp;exit.<br>
+<a href="#Engine-scaleUp">scaleUp</a>(coord:&nbsp;tuple)&nbsp;-&gt;&nbsp;tuple:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Scales&nbsp;(x,&nbsp;y)&nbsp;coords&nbsp;to&nbsp;fit&nbsp;resolution&nbsp;of&nbsp;screen.<br>
+<a href="#Engine-renderScene">renderScene</a>(func:&nbsp;callable,&nbsp;*args)&nbsp;-&gt;&nbsp;None:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Renders&nbsp;custom&nbsp;scene&nbsp;defined&nbsp;outside&nbsp;of&nbsp;this&nbsp;class&nbsp;in&nbsp;the&nbsp;form&nbsp;of&nbsp;customScene(engine:&nbsp;graphics.<a href="#Engine">Engine</a>...<br>
+<a href="#Engine-printToScreen">printToScreen</a>(text:&nbsp;str,&nbsp;pos:&nbsp;tuple,&nbsp;fontSize:&nbsp;int,&nbsp;textColor:&nbsp;tuple,&nbsp;backgroundColor:&nbsp;tuple&nbsp;=&nbsp;None)&nbsp;-&gt;&nbsp;None:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Blits&nbsp;text&nbsp;to&nbsp;screen.<br>
+<a href="#Engine-renderRect">renderRect</a>(pos:&nbsp;tuple,&nbsp;size:&nbsp;tuple,&nbsp;fillColor:&nbsp;tuple,&nbsp;alpha:&nbsp;int&nbsp;=&nbsp;255)&nbsp;-&gt;&nbsp;None:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Blits&nbsp;rect&nbsp;to&nbsp;screen.<br>
+<a href="#Engine-renderCircle">renderCircle</a>(pos:&nbsp;tuple,&nbsp;radius:&nbsp;float,&nbsp;fillColor:&nbsp;tuple,&nbsp;alpha:&nbsp;int&nbsp;=&nbsp;255)&nbsp;-&gt;&nbsp;None:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Blits&nbsp;circle&nbsp;to&nbsp;screen.<br>
+<a href="#Engine-renderLine">renderLine</a>(start:&nbsp;tuple,&nbsp;end:&nbsp;tuple,&nbsp;width:&nbsp;int,&nbsp;fillColor:&nbsp;tuple)&nbsp;-&gt;&nbsp;None:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Blits&nbsp;line&nbsp;to&nbsp;screen.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Engine-__init__"><strong>__init__</strong></a>(self, screenSize: tuple, numGrids: tuple, checkered: bool = False, targetFPS: int = 60, title: str = 'Untitled Game', fontStyle: str = 'impact', gridColors: tuple = ('black', 'white', 'black'), record=False) -&gt; None</dt><dd><tt>Initializes&nbsp;engine,&nbsp;calculates&nbsp;aspect&nbsp;ratio&nbsp;and&nbsp;fits&nbsp;active&nbsp;window&nbsp;to&nbsp;screen.<br>
+&nbsp;<br>
+Parameters<br>
+----------<br>
+screenSize:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Resolution&nbsp;of&nbsp;GUI&nbsp;window<br>
+numGrids:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Number&nbsp;of&nbsp;grid&nbsp;for&nbsp;active&nbsp;game&nbsp;window<br>
+checkered:&nbsp;bool<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If&nbsp;active&nbsp;game&nbsp;window&nbsp;should&nbsp;have&nbsp;checkered&nbsp;background<br>
+targetFPS:&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Target&nbsp;frames&nbsp;per&nbsp;second<br>
+title:&nbsp;str<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Window&nbsp;title<br>
+fontStyle:&nbsp;str<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Font&nbsp;style<br>
+gridColors:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Colors&nbsp;of&nbsp;grid&nbsp;if&nbsp;checkered&nbsp;in&nbsp;form&nbsp;(checker&nbsp;color&nbsp;1,&nbsp;checker&nbsp;color&nbsp;2,&nbsp;border&nbsp;color)</tt></dd></dl>
+
+<dl><dt><a name="Engine-clearScreen"><strong>clearScreen</strong></a>(self) -&gt; None</dt><dd><tt>Removes&nbsp;everything&nbsp;blitted&nbsp;on&nbsp;screen&nbsp;by&nbsp;covering&nbsp;everything&nbsp;with&nbsp;background.</tt></dd></dl>
+
+<dl><dt><a name="Engine-exit"><strong>exit</strong></a>(self) -&gt; None</dt><dd><tt>Has&nbsp;engine&nbsp;exit.</tt></dd></dl>
+
+<dl><dt><a name="Engine-printToScreen"><strong>printToScreen</strong></a>(self, text: str, pos: tuple, fontSize: int, textColor: tuple, backgroundColor: tuple = None) -&gt; None</dt><dd><tt>Blits&nbsp;text&nbsp;to&nbsp;screen.<br>
+&nbsp;<br>
+Parameters<br>
+----------<br>
+text:&nbsp;str<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Text&nbsp;to&nbsp;display<br>
+pos:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(x,&nbsp;y)&nbsp;pos&nbsp;on&nbsp;screen&nbsp;to&nbsp;display&nbsp;text<br>
+fontSize:&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Size&nbsp;of&nbsp;font<br>
+textColor:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RGB&nbsp;color&nbsp;value<br>
+backgroundColor:&nbsp;tuple,&nbsp;optional<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RGB&nbsp;color&nbsp;value&nbsp;for&nbsp;rect&nbsp;behind&nbsp;text</tt></dd></dl>
+
+<dl><dt><a name="Engine-renderCircle"><strong>renderCircle</strong></a>(self, pos: tuple, radius: float, fillColor: tuple, alpha: int = 255) -&gt; None</dt><dd><tt>Blits&nbsp;circle&nbsp;to&nbsp;screen.<br>
+&nbsp;<br>
+Parameters<br>
+----------<br>
+pos:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(x,&nbsp;y)&nbsp;pos&nbsp;to&nbsp;blit&nbsp;rect&nbsp;to&nbsp;screen<br>
+radius:&nbsp;float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Radius&nbsp;of&nbsp;circle<br>
+fillColor:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RGB&nbsp;values&nbsp;for&nbsp;color&nbsp;of&nbsp;rect<br>
+alpha:&nbsp;int,&nbsp;default=255<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Transparency&nbsp;value&nbsp;(0-255)&nbsp;of&nbsp;rect</tt></dd></dl>
+
+<dl><dt><a name="Engine-renderLine"><strong>renderLine</strong></a>(self, start: tuple, end: tuple, width: int, fillColor: tuple) -&gt; None</dt><dd><tt>Blits&nbsp;line&nbsp;to&nbsp;screen.<br>
+&nbsp;<br>
+Parameters<br>
+----------<br>
+start:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(x,&nbsp;y)&nbsp;pos&nbsp;for&nbsp;start&nbsp;point&nbsp;of&nbsp;line<br>
+end:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(x,&nbsp;y)&nbsp;pos&nbsp;for&nbsp;end&nbsp;point&nbsp;of&nbsp;line<br>
+width:&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value&nbsp;denoting&nbsp;width&nbsp;of&nbsp;line<br>
+fillColor:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RGB&nbsp;values&nbsp;for&nbsp;color&nbsp;of&nbsp;rect</tt></dd></dl>
+
+<dl><dt><a name="Engine-renderRect"><strong>renderRect</strong></a>(self, pos: tuple, size: tuple, fillColor: tuple, alpha: int = 255) -&gt; None</dt><dd><tt>Blits&nbsp;rect&nbsp;to&nbsp;screen.<br>
+&nbsp;<br>
+Parameters<br>
+----------<br>
+pos:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(x,&nbsp;y)&nbsp;pos&nbsp;to&nbsp;blit&nbsp;rect&nbsp;to&nbsp;screen<br>
+size:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(x,&nbsp;y)&nbsp;size&nbsp;of&nbsp;rect<br>
+fillColor:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RGB&nbsp;values&nbsp;for&nbsp;color&nbsp;of&nbsp;rect<br>
+alpha:&nbsp;int,&nbsp;default=255<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Transparency&nbsp;value&nbsp;(0-255)&nbsp;of&nbsp;rect</tt></dd></dl>
+
+<dl><dt><a name="Engine-renderScene"><strong>renderScene</strong></a>(self, func: &lt;built-in function callable&gt;, *args) -&gt; None</dt><dd><tt>Renders&nbsp;custom&nbsp;scene&nbsp;defined&nbsp;outside&nbsp;of&nbsp;this&nbsp;class&nbsp;in&nbsp;the&nbsp;form&nbsp;of&nbsp;customScene(engine:&nbsp;graphics.<a href="#Engine">Engine</a>...<br>
+&nbsp;<br>
+Parameters<br>
+----------<br>
+func:&nbsp;callable<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Function&nbsp;describing&nbsp;how&nbsp;to&nbsp;render&nbsp;custom&nbsp;scene<br>
+*args<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Arguments&nbsp;to&nbsp;pass&nbsp;into&nbsp;func</tt></dd></dl>
+
+<dl><dt><a name="Engine-scaleUp"><strong>scaleUp</strong></a>(self, coord: tuple) -&gt; tuple</dt><dd><tt>Scales&nbsp;(x,&nbsp;y)&nbsp;coords&nbsp;to&nbsp;fit&nbsp;resolution&nbsp;of&nbsp;screen.<br>
+&nbsp;<br>
+Parameters<br>
+----------<br>
+coord:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(x,&nbsp;y)&nbsp;coord&nbsp;to&nbsp;scale&nbsp;up<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+tuple:&nbsp;scaled&nbsp;coord</tt></dd></dl>
+
+<dl><dt><a name="Engine-shouldRun"><strong>shouldRun</strong></a>(self) -&gt; bool</dt><dd><tt>Determines&nbsp;if&nbsp;engine&nbsp;should&nbsp;keep&nbsp;running.<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+bool:&nbsp;if&nbsp;engine&nbsp;is&nbsp;now&nbsp;running&nbsp;after&nbsp;checks</tt></dd></dl>
+
+<dl><dt><a name="Engine-updateScreen"><strong>updateScreen</strong></a>(self) -&gt; None</dt><dd><tt>Renders&nbsp;necessary&nbsp;components&nbsp;to&nbsp;screen.</tt></dd></dl>
+
+<hr>
+Static methods defined here:<br>
+<dl><dt><a name="Engine-checkerboard"><strong>checkerboard</strong></a>(n: tuple, border: bool = True) -&gt; dict</dt><dd><tt>Creates&nbsp;checkerboard&nbsp;representation.<br>
+x&nbsp;x&nbsp;x&nbsp;x&nbsp;x&nbsp;.&nbsp;.&nbsp;.<br>
+x&nbsp;o&nbsp;x&nbsp;o&nbsp;x<br>
+x&nbsp;x&nbsp;o&nbsp;x&nbsp;o<br>
+.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.&nbsp;.&nbsp;.<br>
+.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.<br>
+.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.<br>
+&nbsp;<br>
+Parameters<br>
+----------<br>
+n:&nbsp;tuple<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Size&nbsp;of&nbsp;checkerboard<br>
+border:&nbsp;bool<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;border&nbsp;should&nbsp;be&nbsp;included&nbsp;on&nbsp;edges<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+dict:&nbsp;Keys&nbsp;are&nbsp;(x,&nbsp;y)&nbsp;coords,&nbsp;values&nbsp;are&nbsp;0,&nbsp;1,&nbsp;or&nbsp;2</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>colors</strong> = {'black': (0, 0, 0), 'blue': (0, 0, 255), 'green': (0, 255, 0), 'lightBlue': (175, 175, 255), 'mediumBlue': (150, 150, 255), 'purple': (200, 100, 200), 'red': (255, 0, 0), 'white': (255, 255, 255)}</dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__email__</strong> = 'g.holmes429@gmail.com'</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Grant&nbsp;Holmes</td></tr></table>
+</body></html>

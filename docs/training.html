@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module training</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>training</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:c%3A%5Cusers%5Cgholm%5Cdesktop%5Csnake-ai%5Ccore%5Cgenetics%5Ctraining.py">c:\users\gholm\desktop\snake-ai\core\genetics\training.py</a></font></td></tr></table>
+    <p><tt>Uses&nbsp;multi-core&nbsp;parallel&nbsp;processing&nbsp;to&nbsp;train&nbsp;neural&nbsp;networks&nbsp;through&nbsp;natural&nbsp;selection.<br>
+&nbsp;<br>
+Classes<br>
+-------<br>
+<a href="#Genetics">Genetics</a><br>
+&nbsp;<br>
+References:&nbsp;The&nbsp;psuedo-code&nbsp;of&nbsp;<a href="#Genetics">Genetics</a>.evolve&nbsp;and&nbsp;<a href="#Genetics">Genetics</a>.evaluate&nbsp;is&nbsp;loosely&nbsp;based&nbsp;on&nbsp;that&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;of&nbsp;https://github.com/valentinmace/snake/blob/master/genetic_algorithm.py.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="numpy.html">numpy</a><br>
+</td><td width="25%" valign=top><a href="core.settings.html">core.settings</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="builtins.html#object">builtins.object</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="training.html#Genetics">Genetics</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Genetics">class <strong>Genetics</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt><a href="#Genetics">Genetics</a>(initialPopulation:&nbsp;list,&nbsp;task:&nbsp;&amp;lt;built-in&nbsp;function&nbsp;callable&amp;gt;,&nbsp;mergeTraits:&nbsp;&amp;lt;built-in&nbsp;function&nbsp;callable&amp;gt;&nbsp;=&nbsp;None,&nbsp;crossoverRate:&nbsp;float&nbsp;=&nbsp;0.3,&nbsp;mutationRate:&nbsp;float&nbsp;=&nbsp;0.7,&nbsp;trials:&nbsp;int&nbsp;=&nbsp;4)&nbsp;-&amp;gt;&nbsp;None<br>
+&nbsp;<br>
+Trains&nbsp;neural&nbsp;networks&nbsp;to&nbsp;perform&nbsp;given&nbsp;task.<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Algorithm&nbsp;has&nbsp;many&nbsp;similarities&nbsp;to&nbsp;biological&nbsp;concepts&nbsp;such&nbsp;as&nbsp;evolution,&nbsp;natural&nbsp;selection,&nbsp;genetic&nbsp;mutation,<br>
+crossover,&nbsp;and&nbsp;epigenetics.&nbsp;Population&nbsp;performs&nbsp;a&nbsp;given&nbsp;task&nbsp;and&nbsp;then&nbsp;those&nbsp;that&nbsp;perform&nbsp;best&nbsp;are&nbsp;able&nbsp;to&nbsp;pass&nbsp;down<br>
+the&nbsp;traits&nbsp;that&nbsp;controlled&nbsp;their&nbsp;aptitude&nbsp;for&nbsp;the&nbsp;task&nbsp;to&nbsp;the&nbsp;next&nbsp;generation.&nbsp;Crossover&nbsp;allows&nbsp;multiple&nbsp;members<br>
+of&nbsp;the&nbsp;population&nbsp;to&nbsp;combine&nbsp;their&nbsp;traits&nbsp;to&nbsp;pass&nbsp;down,&nbsp;hopefully&nbsp;creating&nbsp;a&nbsp;balanced,&nbsp;well&nbsp;performing&nbsp;member&nbsp;of&nbsp;the<br>
+next&nbsp;generation.&nbsp;New&nbsp;members&nbsp;of&nbsp;the&nbsp;population&nbsp;are&nbsp;subject&nbsp;to&nbsp;genetic&nbsp;mutations&nbsp;that&nbsp;diversify&nbsp;the&nbsp;population&nbsp;set.<br>
+Not&nbsp;all&nbsp;mutations&nbsp;are&nbsp;positive,&nbsp;and&nbsp;the&nbsp;mutated&nbsp;individuals&nbsp;who&nbsp;are&nbsp;worse&nbsp;at&nbsp;the&nbsp;task&nbsp;die&nbsp;off.&nbsp;However,&nbsp;the<br>
+continuation&nbsp;of&nbsp;this&nbsp;process&nbsp;eventually&nbsp;yields&nbsp;a&nbsp;diverse&nbsp;solution&nbsp;set&nbsp;composed&nbsp;of&nbsp;the&nbsp;individuals&nbsp;whose&nbsp;traits<br>
+survived.<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;While&nbsp;this&nbsp;algorithm&nbsp;can&nbsp;only&nbsp;provide&nbsp;a&nbsp;non-deterministic&nbsp;approximate&nbsp;solution&nbsp;to&nbsp;a&nbsp;given&nbsp;problem&nbsp;or&nbsp;task,<br>
+it&nbsp;can&nbsp;solve&nbsp;many&nbsp;difficult&nbsp;and&nbsp;complex&nbsp;problems&nbsp;without&nbsp;explicit&nbsp;solutions&nbsp;given&nbsp;enough&nbsp;time&nbsp;and&nbsp;and&nbsp;a&nbsp;suitable<br>
+fitness&nbsp;function.<br>
+&nbsp;<br>
+Attributes<br>
+----------<br>
+population:&nbsp;list<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Most&nbsp;recent&nbsp;population&nbsp;set<br>
+task:&nbsp;callable<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Task&nbsp;members&nbsp;will&nbsp;learn&nbsp;to&nbsp;do<br>
+fitness:&nbsp;callable<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Function&nbsp;that&nbsp;can&nbsp;evaluate&nbsp;MemberType&nbsp;that&nbsp;returns&nbsp;fitness&nbsp;score<br>
+mergeTraits:&nbsp;callable<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Function&nbsp;called&nbsp;on&nbsp;parents&nbsp;during&nbsp;cross&nbsp;over&nbsp;to&nbsp;merge&nbsp;non&nbsp;essential&nbsp;traits&nbsp;like&nbsp;colors&nbsp;or&nbsp;names<br>
+size:&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Population&nbsp;size<br>
+crossovers:&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;How&nbsp;many&nbsp;children&nbsp;will&nbsp;be&nbsp;created&nbsp;every&nbsp;generation<br>
+mutations:&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;How&nbsp;many&nbsp;mutants&nbsp;will&nbsp;be&nbsp;created&nbsp;every&nbsp;generation<br>
+trials:&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Number&nbsp;of&nbsp;performances&nbsp;will&nbsp;be&nbsp;averaged&nbsp;to&nbsp;determine&nbsp;member&nbsp;fitness<br>
+gen:&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Current&nbsp;generation<br>
+best:&nbsp;MemberType<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Best&nbsp;overall&nbsp;member,&nbsp;irregardless&nbsp;of&nbsp;generation<br>
+bestFitness:&nbsp;float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fitness&nbsp;score&nbsp;of&nbsp;best&nbsp;member<br>
+generations:&nbsp;dict<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Keys&nbsp;are&nbsp;generations&nbsp;number&nbsp;values&nbsp;take&nbsp;form:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gen:&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"population":&nbsp;list&nbsp;of&nbsp;{"<a href="builtins.html#object">object</a>":&nbsp;MemberType,&nbsp;"fitness":&nbsp;float,&nbsp;"score":&nbsp;float},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"best":&nbsp;{"<a href="builtins.html#object">object</a>":&nbsp;MemberType,&nbsp;"fitness":&nbsp;float,&nbsp;"score":&nbsp;float}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;<br>
+Public&nbsp;Methods<br>
+--------------<br>
+<a href="#Genetics-evolve">evolve</a>()&nbsp;-&gt;&nbsp;None:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Evolves&nbsp;population.<br>
+<a href="#Genetics-getGenStats">getGenStats</a>(gen:&nbsp;int)&nbsp;-&gt;&nbsp;dict:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Gets&nbsp;score&nbsp;and&nbsp;fitness&nbsp;stats&nbsp;from&nbsp;a&nbsp;given&nbsp;generation.<br>
+<a href="#Genetics-printGenStats">printGenStats</a>(gen:&nbsp;int)&nbsp;-&gt;&nbsp;None:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Prints&nbsp;analytics&nbsp;of&nbsp;given&nbsp;generation&nbsp;to&nbsp;terminal.<br>
+<a href="#Genetics-cleanup">cleanup</a>()&nbsp;-&gt;&nbsp;None:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Closes&nbsp;and&nbsp;joins&nbsp;processes.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Genetics-__getstate__"><strong>__getstate__</strong></a>(self) -&gt; dict</dt></dl>
+
+<dl><dt><a name="Genetics-__init__"><strong>__init__</strong></a>(self, initialPopulation: list, task: &lt;built-in function callable&gt;, mergeTraits: &lt;built-in function callable&gt; = None, crossoverRate: float = 0.3, mutationRate: float = 0.7, trials: int = 4) -&gt; None</dt><dd><tt>Initializes.<br>
+&nbsp;<br>
+Parameters<br>
+----------<br>
+initialPopulation:&nbsp;list<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Gen&nbsp;0&nbsp;population<br>
+task:&nbsp;callable<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Task&nbsp;members&nbsp;will&nbsp;learn&nbsp;to&nbsp;do,&nbsp;should&nbsp;return&nbsp;dictionary&nbsp;with&nbsp;'fitness'&nbsp;and&nbsp;'score'&nbsp;keys<br>
+mergeTraits:&nbsp;callable,&nbsp;optional<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Function&nbsp;called&nbsp;on&nbsp;parents&nbsp;during&nbsp;cross&nbsp;over&nbsp;to&nbsp;merge&nbsp;non&nbsp;essential&nbsp;traits&nbsp;like&nbsp;colors&nbsp;or&nbsp;names<br>
+crossoverRate:&nbsp;float,&nbsp;default=0.3<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Used&nbsp;to&nbsp;determine&nbsp;many&nbsp;children&nbsp;will&nbsp;be&nbsp;created&nbsp;every&nbsp;generation<br>
+mutationRate:&nbsp;float,&nbsp;default=0.7<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Used&nbsp;to&nbsp;determine&nbsp;how&nbsp;many&nbsp;mutants&nbsp;will&nbsp;be&nbsp;created&nbsp;every&nbsp;generation<br>
+trials:&nbsp;int,&nbsp;default=4<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Number&nbsp;of&nbsp;performances&nbsp;will&nbsp;be&nbsp;averaged&nbsp;to&nbsp;determine&nbsp;member&nbsp;fitness</tt></dd></dl>
+
+<dl><dt><a name="Genetics-__setstate__"><strong>__setstate__</strong></a>(self, state: dict) -&gt; None</dt></dl>
+
+<dl><dt><a name="Genetics-cleanup"><strong>cleanup</strong></a>(self) -&gt; None</dt><dd><tt>Cleans&nbsp;up&nbsp;multiprocessing&nbsp;pool</tt></dd></dl>
+
+<dl><dt><a name="Genetics-evolve"><strong>evolve</strong></a>(self) -&gt; None</dt><dd><tt>Evolves&nbsp;population.</tt></dd></dl>
+
+<dl><dt><a name="Genetics-getGenStats"><strong>getGenStats</strong></a>(self) -&gt; dict</dt><dd><tt>Gets&nbsp;score&nbsp;and&nbsp;fitness&nbsp;stats&nbsp;from&nbsp;a&nbsp;given&nbsp;generation.<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+dict:&nbsp;stats&nbsp;in&nbsp;form&nbsp;of&nbsp;{"highScore":&nbsp;highest&nbsp;score&nbsp;from&nbsp;generation,&nbsp;"fitnesses":&nbsp;list&nbsp;of&nbsp;fitnesses}</tt></dd></dl>
+
+<dl><dt><a name="Genetics-printGenStats"><strong>printGenStats</strong></a>(self) -&gt; None</dt><dd><tt>Prints&nbsp;analytics&nbsp;of&nbsp;given&nbsp;generation&nbsp;to&nbsp;terminal.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__email__</strong> = 'g.holmes429@gmail.com'</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Grant&nbsp;Holmes</td></tr></table>
+</body></html>
