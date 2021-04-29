@@ -23,7 +23,7 @@ _Note: Windows users may need to run commands with `python` instead of `python3`
 * Floodfill, moves towards food but always tries to move in direction resulting in most open spaces
 * Cycle, calculates hamiltonian cycle approximation for path
 * Multi, specialized neural network that chooses between pathfinding, cycle, and neural network as game progresses
-* Hierarchical, specialized neural network chooses between three different neural networks as game progresses
+* Hierarchical, specialized neural network that chooses between three different neural networks as game progresses
 
 ## Notes:
 * Change settings in `core\settings.py` including map size, target frame rate, default architectures and more
