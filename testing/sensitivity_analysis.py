@@ -167,9 +167,10 @@ def main():
     ic(A[0])
     print()
     ic(A[1])
+    # note: got different result from A than in example
     return
         
-    # ???
+    # below here is not correct!
     
     # with full dimensionality
     M = np.array([  # form M by concatenating blocks
