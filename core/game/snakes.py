@@ -176,8 +176,8 @@ class Snake:
 		self.starvation = self.hungerFunc(len(self))
 		self.hunger = 0
 		
-	def navigate(self, environment):
-		if observed := self.behavior.calcMoves(self.body.copy(), self.direction, self.awareness, environment, self.hunger):
+	def navigate(self, environment, noise):
+		if observed := self.behavior.calcMoves(self.body.copy(), self.direction, self.awareness, environment, self.hunger, noise=noise):
 			self.awareness.update(observed)
 		
 	def setReference(self, origin: tuple) -> None:

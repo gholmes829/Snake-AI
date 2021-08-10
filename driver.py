@@ -124,7 +124,7 @@ class Driver:
 				avgUsage = {algo: 0 for algo in algos}
 			
 			for i in range(numGames):
-				gameEnvironment = environment.Environment(snake, settings.mapSize)
+				gameEnvironment = environment.Environment(snake, settings.mapSize, noise=settings.noise)
 				#gameEnvironment = environment.Environment(snake, settings.mapSize, origin=(3, 0))  # for cycle to win or get close when odd
 				games.playGame(gameEnvironment, render=(not (numGames-1)))
 				scores.append(snake.size)

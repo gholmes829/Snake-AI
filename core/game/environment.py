@@ -57,7 +57,7 @@ class Environment:
 		Displays map and environment in terminal.
 	"""
 
-	def __init__(self, snake: snakes.Snake, mapSize: tuple, origin: tuple = None, food: list = None) -> None:
+	def __init__(self, snake: snakes.Snake, mapSize: tuple, origin: tuple = None, food: list = None, noise: float = 0) -> None:
 		"""
 		Initializes environment, places snake and food.
 
@@ -74,6 +74,7 @@ class Environment:
 		"""
 		self.origin = origin
 		self.gameMap = Map(mapSize)
+		self.noise = noise
 		
 		self.snake = snake
 		self.prevSnakeBody = None
@@ -88,12 +89,13 @@ class Environment:
 		
 		self._placeSnake()
 		self._placeFood()
-		self.snake.navigate(self.gameMap)
+		self.snake.navigate(self.gameMap, self.noise)
 
 	def step(self) -> None:
 		"""Takes a time step in game, calculating next state and updating game objects."""
 		#print("\nBEFORE")
 		#self.display()
+       
 		self.prevSnakeBody = self.snake.body.copy()
 		self.snake.move()
 		self.moveLog.append(self.snake.direction)
@@ -109,9 +111,8 @@ class Environment:
 				self._placeFood()
 			else:  # Snake moved into open space
 				self.gameMap[self.snake.prevTail] = EMPTY
-			#print("AFTER")
 			#self.display()			
-			self.snake.navigate(self.gameMap)
+			self.snake.navigate(self.gameMap, self.noise)
 		
 	def active(self) -> bool:
 		"""

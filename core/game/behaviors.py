@@ -43,21 +43,20 @@ class NeuralNetwork:
 			architecture = (24, 16, 3),
 			weights = None,
 			biases = None,
-			shielded = False,
+			shielded = False
 		) -> None:
+		self.architecture = architecture
 		self.network = brain.FFNN(architecture, weights=weights, biases=biases)
 		self.shielded = shielded
 		self.nextDirection, self.nextMove = None, None
 		self.getNetworkDecision = self.getNetworkDecisionFunc(self.shielded)
-		#self.ds = ((-1, 0), (0, -1), (1, 0))
-		#self.numOpenAdjacent = 0
 
-	def calcMoves(self, body, direction, awareness, environment, hunger):
+	def calcMoves(self, body, direction, awareness, environment, hunger, noise=0):
 		vision, visionBounds = brain.castRays(body[0], direction, environment, awareness["maxVision"])
+		if noise:
+			vision += np.random.normal(0, noise, self.architecture[0])
 		self.nextDirection, self.nextMove = self.getNetworkDecision(self.network, body, direction, vision)
 		head = body[0]
-		#adjacentDanger = sum([int(environment[head[0] + dx, head[1] + dy] == -1) for dx, dy in self.ds])
-		#self.numOpenAdjacent = 3 - adjacentDanger  # maybe change fitness heuristic to based on num danger instead of num open?
 		return {"visionBounds": visionBounds}
 		
 	def __call__(self) -> tuple:
@@ -77,7 +76,7 @@ class NeuralNetwork:
 			return decisions.getNetworkDecision
 
 			
-class Pathfinder:  # DEBUGGING FLOOD
+class Pathfinder:
 	def __init__(self, pathLength = "short", floodfill=False):
 		self.nextDirection, self.nextMove = None, None
 		self.path = []
@@ -85,7 +84,7 @@ class Pathfinder:  # DEBUGGING FLOOD
 		self.pathLength = pathLength
 		self.floodfill = floodfill
 		
-	def calcMoves(self, body, direction, awareness, environment, hunger):
+	def calcMoves(self, body, direction, awareness, environment, hunger, noise=0):
 		projected = set(self.path)
 		if not self.path:
 			self.path = decisions.getPath(environment, body, self.pathLength)
@@ -115,7 +114,7 @@ class Hamiltonian:
 		self.openness = None
 		self.floodfill = floodfill
 		
-	def calcMoves(self, body, direction, awareness, environment, hunger):
+	def calcMoves(self, body, direction, awareness, environment, hunger, noise=0):
 		projected = set(self.path)
 		if not self.path:
 			self.path = decisions.getCycle(body, environment)
@@ -143,7 +142,7 @@ class FloodFill:
 		self.openness = None
 		self.distances = None
 		
-	def calcMoves(self, body, direction, awareness, environment, hunger):
+	def calcMoves(self, body, direction, awareness, environment, hunger, noise=0):
 		self.openness = decisions.getOpenness(body, direction, environment, depth=-1)
 		self.distances = decisions.getDistances(body[0], direction, environment.filter(1)[0])
 		self.nextDirection, self.nextMove = decisions.getCloseSafeMove(self.openness, self.distances, direction)
@@ -157,9 +156,7 @@ class FloodFill:
 			
 	def brain(self):
 		return {"type": "behavior"}
-			
-			
-			
+
 			
 class Multi:  # genetic, pathfinding, floodfill
 	def __init__(
@@ -174,6 +171,7 @@ class Multi:  # genetic, pathfinding, floodfill
 			shielded = False,
 			pathLength = "short",
 			):
+		self.metaArchitecture = metaArchitecture
 		self.nextDirection, self.nextMove = None, None
 		self.path = []
 		self.openness = None
@@ -188,109 +186,25 @@ class Multi:  # genetic, pathfinding, floodfill
 		self.algoUsage = {"genetic": 0, "pathfind": 0, "floodfill": 0}
 		self.algoIndexToName = {0: "genetic", 1: "pathfind", 2: "floodfill"}
 		
-		#self.prevSnakeSize = 0
-		#self.singleCounter = 0
-		#self.prevSnakeHunger = 0
-		#self.maxSingleCounter = 5
-		#self.numOpenAdjacent = 0
-		
 		self.ds = ((-1, 0), (0, -1), (1, 0))
 
 		# current decisions
 		self.algoIndex = None
 		self.algoName = None
 		
-	def calcMoves(self, body, direction, awareness, environment, hunger):
-		# foodFound = False
+	def calcMoves(self, body, direction, awareness, environment, hunger, noise=0):
 		food = environment.filter(1)[0]
 		head = body[0]
 		tail = body[-1]
 		
-		#if len(body) != self.prevSnakeSize:
-		#	foodFound = True
-		#	self.prevSnakeSize = len(body)
-			
-		#if (self.algoIndex in {0, 2} and foodFound) or (self.algoIndex == 1 and not self.path) or self.algoIndex is None:
 		if self.algoIndex in {0, 2} or (self.algoIndex == 1 and not self.path) or self.algoIndex is None:
 			# calculate input features
-			""" Not using these right now
-			# calculate input features
-			#relativeSnakeSize = len(body) / environment.area
-			
-			# REMOVE UNNECESARY FEATURES
-			foodCloseness = 1 / brain.distOpt(body[0], food)
-			tailCloseness = 1 / brain.distOpt(body[0], body[-1])
-			
-			centerCloseness = 1 / (brain.distOpt(body[0], (int(environment.size[0]/2), int(environment.size[1]/2))) + 1)
-				
-			# danger as openness (need flood fill to search for openness, expensive)
-			leftSpace = self.openness[-1, 0] / environment.area
-			forwardSpace = self.openness[0, 1] / environment.area
-			rightSpace = self.openness[1, 0] / environment.area
-			
-			#proximity
-			left, right = brain.rotate(direction, 90), brain.rotate(direction, -90)
-			leftDanger = int(environment[head[0] + left[0], head[1] + left[1]] == -1)
-			forwardDanger = int(environment[head[0] + direction[0], head[1] + direction[1]] == -1)
-			rightDanger = int(environment[head[0] + right[0], head[1] + right[1]] == -1)
-			
-			self.numOpenAdjacent = 3 - leftDanger - forwardDanger - rightDanger
-			
-			leftDangerFood = int(environment[food[0] - 1, food[1]] == -1)
-			upDangerFood = int(environment[food[0], food[1] - 1] == -1)
-			rightDangerFood = int(environment[food[0] + 1, food[1]] == -1)
-			downDangerFood = int(environment[food[0], food[1] + 1] == -1)
-			
-			leftDangerTail = int(environment[tail[0] - 1, tail[1]] == -1)
-			upDangerTail = int(environment[tail[0], tail[1] - 1] == -1)
-			rightDangerTail = int(environment[tail[0] + 1, tail[1]] == -1)
-			downDangerTail = int(environment[tail[0], tail[1] + 1] == -1)
-			
-			# wall dist
-			wallUp = 1 / (body[0][1] + 1)
-			wallRight = 1 / (environment.size[0] - head[0] + 1)
-			wallDown = 1 / (environment.size[1] - head[1] + 1)
-			wallLeft = 1 / (head[0] + 1)
-			
-			# food relations
-			relativeHunger = self.prevSnakeHunger/awareness["maxHunger"]
-			manhattanMovesToFood = (abs(food[0] - head[0]) + abs(food[1] - head[1])) / environment.innerPerimeter
-			
-			features = np.array([
-				relativeSnakeSize,
-				foodCloseness,
-				tailCloseness,
-				centerCloseness,
-				wallUp,
-				wallRight,
-				wallDown,
-				wallLeft,
-				leftDanger,
-				forwardDanger,
-				rightDanger,
-				leftDangerFood,
-				upDangerFood,
-				rightDangerFood,
-				downDangerFood,
-				leftDangerTail,
-				upDangerTail,
-				rightDangerTail,
-				downDangerTail,
-				relativeHunger,
-				manhattanMovesToFood
-			])
-			
-			features = np.concatenate((np.array([relativeSnakeSize, relativeHunger, manhattanMovesToFood]), vision))
-			"""
-		
-		
 			vision, visionBounds = brain.castRays(head, direction, environment, awareness["maxVision"])
-			features = vision  # delete, trying using only og features
-			self.algoIndex = np.argmax(self.metaNetwork.feedForward(features))
+			if noise:
+				vision += np.random.normal(0, noise, self.metaArchitecture[0])
+			self.algoIndex = np.argmax(self.metaNetwork.feedForward(vision))
 			self.algoName = self.algoIndexToName[self.algoIndex]
-			
 		if self.algoIndex == 0:  # neural net
-			# vision, visionBounds = brain.castRays(head, direction, environment, awareness["maxVision"])
 			self.nextDirection, self.nextMove = self.getNetworkDecision(self.network, body, direction, vision)
 		elif self.algoIndex == 1:  # pathfinding
 			if not self.path:
@@ -343,6 +257,7 @@ class Hierarchical:
 			):
 		# reset architecture, removed additional features for testing
 		self.nextDirection, self.nextMove = None, None
+		self.metaArchitecture = metaArchitecture
 		self.metaNetwork = brain.FFNN(metaArchitecture, weights=metaWeights, biases=metaBiases)
 		self.shielded = shielded
 		self.getNetworkDecision = NeuralNetwork.getNetworkDecisionFunc(self.shielded)
@@ -364,93 +279,23 @@ class Hierarchical:
 		self.algoUsage = {"network 1": 0, "network 2": 0, "network 3": 0}
 		self.algoIndexToName = {0: "network 1", 1: "network 2", 2: "network 3"}
 		
-	def calcMoves(self, body, direction, awareness, environment, hunger):
+	def calcMoves(self, body, direction, awareness, environment, hunger, noise=0):
 		food = environment.filter(1)[0]
 		head = body[0]
 		tail = body[-1]
 		
-		""" Not using these right now
-		# calculate input features
-		#relativeSnakeSize = len(body) / environment.area
-		
-		# REMOVE UNNECESARY FEATURES
-		foodCloseness = 1 / brain.distOpt(body[0], food)
-		tailCloseness = 1 / brain.distOpt(body[0], body[-1])
-		
-		centerCloseness = 1 / (brain.distOpt(body[0], (int(environment.size[0]/2), int(environment.size[1]/2))) + 1)
-			
-		# danger as openness (need flood fill to search for openness, expensive)
-		leftSpace = self.openness[-1, 0] / environment.area
-		forwardSpace = self.openness[0, 1] / environment.area
-		rightSpace = self.openness[1, 0] / environment.area
-		
-		#proximity
-		left, right = brain.rotate(direction, 90), brain.rotate(direction, -90)
-		leftDanger = int(environment[head[0] + left[0], head[1] + left[1]] == -1)
-		forwardDanger = int(environment[head[0] + direction[0], head[1] + direction[1]] == -1)
-		rightDanger = int(environment[head[0] + right[0], head[1] + right[1]] == -1)
-		
-		self.numOpenAdjacent = 3 - leftDanger - forwardDanger - rightDanger
-		
-		leftDangerFood = int(environment[food[0] - 1, food[1]] == -1)
-		upDangerFood = int(environment[food[0], food[1] - 1] == -1)
-		rightDangerFood = int(environment[food[0] + 1, food[1]] == -1)
-		downDangerFood = int(environment[food[0], food[1] + 1] == -1)
-		
-		leftDangerTail = int(environment[tail[0] - 1, tail[1]] == -1)
-		upDangerTail = int(environment[tail[0], tail[1] - 1] == -1)
-		rightDangerTail = int(environment[tail[0] + 1, tail[1]] == -1)
-		downDangerTail = int(environment[tail[0], tail[1] + 1] == -1)
-		
-		# wall dist
-		wallUp = 1 / (body[0][1] + 1)
-		wallRight = 1 / (environment.size[0] - head[0] + 1)
-		wallDown = 1 / (environment.size[1] - head[1] + 1)
-		wallLeft = 1 / (head[0] + 1)
-		
-		# food relations
-		relativeHunger = self.prevSnakeHunger/awareness["maxHunger"]
-		manhattanMovesToFood = (abs(food[0] - head[0]) + abs(food[1] - head[1])) / environment.innerPerimeter
-		
-		features = np.array([
-			relativeSnakeSize,
-			foodCloseness,
-			tailCloseness,
-			centerCloseness,
-			wallUp,
-			wallRight,
-			wallDown,
-			wallLeft,
-			leftDanger,
-			forwardDanger,
-			rightDanger,
-			leftDangerFood,
-			upDangerFood,
-			rightDangerFood,
-			downDangerFood,
-			leftDangerTail,
-			upDangerTail,
-			rightDangerTail,
-			downDangerTail,
-			relativeHunger,
-			manhattanMovesToFood
-		])
-		
-		features = np.concatenate((np.array([relativeSnakeSize, relativeHunger, manhattanMovesToFood]), vision))
-		"""
-		
-		
 		vision, visionBounds = brain.castRays(head, direction, environment, awareness["maxVision"])
-		features = vision  # delete, trying using only original features
 		
+		if noise:
+			vision += np.random.normal(0, noise, self.metaArchitecture[0])
 		
-		self.algoIndex = np.argmax(self.metaNetwork.feedForward(features))
+		self.algoIndex = np.argmax(self.metaNetwork.feedForward(vision))
 		self.algoName = self.algoIndexToName[self.algoIndex]
 		self.algoUsage[self.algoName] += 1
 		
 		self.nextDirection, self.nextMove = self.getNetworkDecision(self.networks[self.algoIndex], body, direction, vision)
-        
-		return {"visionBounds": visionBounds}     
+		
+		return {"visionBounds": visionBounds}	 
 		
 	def __call__(self):
 		return self.nextDirection, self.nextMove
@@ -507,7 +352,7 @@ class Manual:
 
 		return newDirection, move
 		
-	def calcMoves(self, body, direction, awareness, environmen, hunger):
+	def calcMoves(self, body, direction, awareness, environmen, hunger, noise=0):
 		self.body = body
 		self.direction = direction
 
@@ -552,10 +397,10 @@ class Replay:
 		-------
 		tuple: (new global direction, move necessary to have Snake oriented to this direction)
 		"""
-        
+		
 		return self.nextDirection, self.nextMove
 		
-	def calcMoves(self, body, direction, awareness, environment, hunger):
+	def calcMoves(self, body, direction, awareness, environment, hunger, noise=0):
 		if self.memories:
 			self.nextDirection = self.memories.pop()
 			self.nextMove = brain.getOrientedDirection(direction, self.nextDirection, "global")

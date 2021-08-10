@@ -41,12 +41,12 @@ displayTraining = False  # displays best snake after each generation during trai
 initialSnakeSize = 4
 maxSnakeVision = max(mapSize)  # how far rays are cast
 
+noise = 0 # 0.01675
+
 def hungerFunc(size):
 	# return area  # delete
 	return min(a * (size**order) + b, mapSize[0] * mapSize[1])
 
-
-	
 smartShield = False  # allow behavior to overwrite AI neural network decisions
 networkArchitecture = (24, 16, 3)  # FFNN layers
 metaNetworkArchitecture = (16, 12, 3)

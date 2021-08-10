@@ -2,7 +2,7 @@
 Testing environment and unit tests in developments...
 """
 
-from core.brain import pathfind, hamiltonian, longestPath
+from core.game.brain import pathfind, hamiltonian, longestPath
 
 # PATHFINDING
 
