@@ -94,9 +94,9 @@ def main():
     OBJECTIVES:
         1) Assess the robustness of true sequence of states 'u'
     METHOD:
-        1) Produce pseudo orbit 'v' such that in a metric 'd' we satisfy 'd(v_{t+1}, F(v_t)) <= lambda_t for lambda_t <= lambda' for potentially varying 'lambda'
+        1) Produce pseudo orbit 'v' such that in a metric 'd' we satisfy 'd(v_{t+1}, F(v_t)) <= delta_t for delta_t <= delta' for potentially varying 'delta'
         2) Using pseudo orbit 'v' as initial guess, solve optimization problem 'min_w H(w)' where 'H(w) = sum(d(w_{t+1}, F(w_t))'
-        3) Collect statistics on convergence of optimized 'w' as function of lambda
+        3) Collect statistics on convergence of optimized 'w' as function of delta
     """
     
     # initialize states (currently hard-coded)
@@ -162,7 +162,7 @@ def main():
             lhs = e(w[t + 1], F(w[t] + d_t(w[t])))
             rhs = E[t]
             A_t = (lhs - rhs).T.reshape(m * n)  # form block component and unroll result
-            A[t][:, column_index] = A_t  # set the (j * k)th column of A
+            A[t][:, column_index] = A_t  # set the corresponding column of A
     
     ic(A[0])
     print()
@@ -170,7 +170,7 @@ def main():
     # note: got different result from A than in example
     return
         
-    # below here is not correct!
+    # below here is mainly pseudo code and will not run correctly!
     
     # with full dimensionality
     M = np.array([  # form M by concatenating blocks
@@ -180,7 +180,9 @@ def main():
     
     delta = -la.pinv(M) @ E
     
-    # reduce dimensionality
+    # TODO: dimensionality reduction
+    # TODO: GN update
+    # TODO: collect statistics with varying delta
     # ...
 
 if __name__ == '__main__':
